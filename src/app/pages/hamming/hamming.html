@@ -1,1 +1,358 @@
-<p>hamming works!</p>
+<div class="page animate-fade-in">
+  <div class="page-header">
+    <span class="badge badge-indigo">Hamming(7,4)</span>
+    <h1 class="page-title">Код Хэмминга</h1>
+    <p class="page-desc">
+      Линейный блочный код, исправляющий одиночные ошибки (SEC). Изобретён Ричардом Хэммингом в 1950 году.
+      Код Хэмминга (7,4) кодирует 4 бита данных в 7-битное кодовое слово, добавляя 3 бита чётности.
+      Минимальное расстояние Хэмминга d<sub>min</sub> = 3.
+    </p>
+  </div>
+
+  <!-- ═══════ STEP 1: Input ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">1</div>
+      <div class="step-label">Входные данные — 4 бита</div>
+    </div>
+
+    <p class="section-desc">
+      Кликните на любой бит, чтобы переключить его значение. Или используйте кнопки ниже.
+    </p>
+
+    <div class="bit-row">
+      @for (bit of dataBits(); track $index; let i = $index) {
+        <div class="bit-input-group">
+          <span class="bit-label">d{{ i + 1 }}</span>
+          <div class="bit-cell" [class.bit-0]="bit === 0" [class.bit-1]="bit === 1"
+               (click)="toggleDataBit(i)">
+            {{ bit }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-sm" (click)="randomData()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.678 48.678 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 003.7 3.7 48.656 48.656 0 007.324 0 4.006 4.006 0 003.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3l-3 3"/>
+        </svg>
+        Случайные данные
+      </button>
+      <button class="btn btn-sm" (click)="setDataBits([0,0,0,0])">Все 0</button>
+      <button class="btn btn-sm" (click)="setDataBits([1,1,1,1])">Все 1</button>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 2: Encoding Process ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">2</div>
+      <div class="step-label">Кодирование — вычисление битов чётности</div>
+    </div>
+
+    <p class="section-desc">
+      Биты чётности располагаются в позициях, являющихся степенями двойки: 1, 2, 4.
+      Каждый бит чётности покрывает определённую группу позиций. Позиция покрывается битом
+      чётности <code>p<sub>k</sub></code>, если в двоичном представлении номера позиции бит k равен 1.
+    </p>
+
+    <!-- Position assignment table -->
+    <div class="pos-table">
+      <div class="pos-header">
+        <div class="pos-cell pos-label">Позиция</div>
+        @for (i of [1,2,3,4,5,6,7]; track i) {
+          <div class="pos-cell">{{ i }}</div>
+        }
+      </div>
+      <div class="pos-row">
+        <div class="pos-cell pos-label">Двоичная</div>
+        @for (i of [1,2,3,4,5,6,7]; track i) {
+          <div class="pos-cell mono">{{ i.toString(2).padStart(3, '0') }}</div>
+        }
+      </div>
+      <div class="pos-row">
+        <div class="pos-cell pos-label">Тип</div>
+        @for (i of [1,2,3,4,5,6,7]; track i) {
+          <div class="pos-cell" [class.type-parity]="isPowerOfTwo(i)" [class.type-data]="!isPowerOfTwo(i)">
+            {{ getPositionType(i) }}
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Encoding steps -->
+    <div class="encoding-steps">
+      @for (step of encodingSteps(); track step.parityBit) {
+        <div class="encoding-step"
+             (mouseenter)="highlightParityGroup.set(step.parityBit)"
+             (mouseleave)="highlightParityGroup.set(null)">
+          <div class="step-parity-badge" [class]="'parity-' + step.parityBit">
+            p{{ step.parityBit }}
+          </div>
+          <div class="step-detail">
+            <div class="step-positions">
+              Покрывает позиции:
+              @for (pos of step.positions; track pos) {
+                <span class="pos-tag" [class.highlight]="highlightParityGroup() === step.parityBit && isInParityGroup(pos, step.parityBit)">{{ pos }}</span>
+              }
+            </div>
+            <code class="step-formula">{{ step.explanation }}</code>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 3: Encoded Codeword ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">3</div>
+      <div class="step-label">Закодированное слово</div>
+    </div>
+
+    <p class="section-desc">
+      Результат кодирования — 7-битное кодовое слово. Жёлтые ячейки — биты чётности, голубые — данные.
+    </p>
+
+    <div class="codeword-display">
+      @for (info of bitInfos(); track info.position; let i = $index) {
+        <div class="cw-bit-group">
+          <span class="cw-pos">{{ info.position }}</span>
+          <div class="bit-cell"
+               [class.bit-parity]="info.type === 'parity'"
+               [class.bit-0]="info.type === 'data' && info.value === 0"
+               [class.bit-1]="info.type === 'data' && info.value === 1"
+               [class.highlight-group]="highlightParityGroup() !== null && isInParityGroup(info.position, highlightParityGroup()!)">
+            {{ info.value }}
+          </div>
+          <span class="cw-label" [class.label-parity]="info.type === 'parity'">
+            {{ info.label }}{{ info.type === 'parity' ? '' : (info.position) }}
+          </span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 4: Parity Check Matrix ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">4</div>
+      <div class="step-label">Проверочная матрица H</div>
+    </div>
+
+    <p class="section-desc">
+      Матрица H определяет проверочные соотношения. Каждая строка соответствует одному биту синдрома.
+      Столбцы — это двоичные представления номеров позиций (от 1 до 7). Синдром вычисляется как
+      <code>S = H &middot; r<sup>T</sup></code>, где r — принятое слово.
+    </p>
+
+    <div class="matrix-container">
+      <div class="matrix-wrapper">
+        <div class="matrix-bracket left">H =</div>
+        <div class="matrix-grid">
+          <div class="matrix-col-labels">
+            <div class="matrix-spacer"></div>
+            @for (label of posLabels; track label) {
+              <div class="matrix-col-label">{{ label }}</div>
+            }
+          </div>
+          @for (row of parityCheckMatrix; track $index; let ri = $index) {
+            <div class="matrix-row">
+              <div class="matrix-row-label">{{ hLabels[ri] }}</div>
+              @for (cell of row; track $index; let ci = $index) {
+                <div class="matrix-cell"
+                     [class.cell-1]="cell === 1"
+                     [class.cell-0]="cell === 0"
+                     [class.cell-highlight]="highlightParityGroup() === parityCheckMatrix[ri][ci] * (ri === 0 ? 1 : ri === 1 ? 2 : 4)">
+                  {{ cell }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 5: Error Injection ═══════ -->
+  <section class="card section error-section">
+    <div class="step-indicator">
+      <div class="step-num">5</div>
+      <div class="step-label">Инъекция ошибки</div>
+    </div>
+
+    <p class="section-desc">
+      Кликните на любой бит закодированного слова, чтобы инвертировать его — это симулирует
+      ошибку при передаче. Синдром сразу покажет, где произошла ошибка.
+    </p>
+
+    <div class="codeword-display">
+      @for (bit of received(); track $index; let i = $index) {
+        <div class="cw-bit-group">
+          <span class="cw-pos">{{ useExtended() ? i : i + 1 }}</span>
+          <div class="bit-cell"
+               [class.bit-error]="errorPosition() === i"
+               [class.bit-0]="errorPosition() !== i && bit === 0"
+               [class.bit-1]="errorPosition() !== i && bit === 1"
+               (click)="injectError(i)">
+            {{ bit }}
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-danger btn-sm" (click)="randomError()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+        </svg>
+        Случайная ошибка
+      </button>
+      <button class="btn btn-sm" (click)="clearError()">Убрать ошибку</button>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 6: Syndrome Calculation ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">6</div>
+      <div class="step-label">Вычисление синдрома</div>
+    </div>
+
+    <p class="section-desc">
+      Синдром S = (s1, s2, s4) вычисляется XOR-ом битов в каждой группе чётности.
+      Если S = 0 — ошибок нет. Иначе, значение синдрома в десятичной форме указывает на позицию ошибки.
+    </p>
+
+    <div class="syndrome-steps">
+      @for (step of syndromeSteps(); track step.parityBit) {
+        <div class="syndrome-step">
+          <code class="syndrome-formula">{{ step.explanation }}</code>
+          <span class="syndrome-result" [class.result-ok]="step.xorResult === 0" [class.result-err]="step.xorResult === 1">
+            {{ step.xorResult }}
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="syndrome-summary">
+      <div class="syndrome-value">
+        <span class="syn-label">Синдром S =</span>
+        <span class="syn-bits">({{ syndrome().s1 }}, {{ syndrome().s2 }}, {{ syndrome().s4 }})</span>
+        <span class="syn-equals">=</span>
+        <span class="syn-decimal" [class.no-error]="syndrome().value === 0" [class.has-error]="syndrome().value !== 0">
+          {{ syndrome().value }}
+        </span>
+      </div>
+      @if (syndrome().value === 0) {
+        <div class="syndrome-message ok">Синдром равен 0 — ошибок не обнаружено</div>
+      } @else {
+        <div class="syndrome-message error">
+          Синдром = {{ syndrome().value }} → ошибка в позиции {{ syndrome().value }}
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 7: Error Correction ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">7</div>
+      <div class="step-label">Исправление ошибки</div>
+    </div>
+
+    <p class="section-desc">
+      Для исправления достаточно инвертировать бит в позиции, указанной синдромом.
+      После исправления кодовое слово совпадает с исходным.
+    </p>
+
+    <div class="correction-result">
+      <div class="correction-message" [class.ok]="syndrome().value === 0" [class.corrected]="syndrome().value !== 0">
+        {{ corrected().message }}
+      </div>
+
+      <div class="codeword-display">
+        @for (bit of corrected().word; track $index; let i = $index) {
+          <div class="cw-bit-group">
+            <span class="cw-pos">{{ useExtended() ? i : i + 1 }}</span>
+            <div class="bit-cell"
+                 [class.bit-corrected]="corrected().errorAt === i"
+                 [class.bit-0]="corrected().errorAt !== i && bit === 0"
+                 [class.bit-1]="corrected().errorAt !== i && bit === 1">
+              {{ bit }}
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (syndrome().value !== 0) {
+        <div class="comparison">
+          <div class="comp-row">
+            <span class="comp-label">Отправлено:</span>
+            <code class="comp-bits">{{ encoded().join('') }}</code>
+          </div>
+          <div class="comp-row">
+            <span class="comp-label">Получено:</span>
+            <code class="comp-bits error-bits">{{ received().join('') }}</code>
+          </div>
+          <div class="comp-row">
+            <span class="comp-label">Исправлено:</span>
+            <code class="comp-bits ok-bits">{{ corrected().word.join('') }}</code>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ Theory Section ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">i</div>
+      <div class="step-label">Теоретическая справка</div>
+    </div>
+
+    <div class="theory-grid">
+      <div class="theory-block">
+        <h3>Параметры кода</h3>
+        <div class="param-list">
+          <div class="param"><span class="param-key">n (длина кода)</span><span class="param-val">7</span></div>
+          <div class="param"><span class="param-key">k (инф. биты)</span><span class="param-val">4</span></div>
+          <div class="param"><span class="param-key">r (проверочные)</span><span class="param-val">3</span></div>
+          <div class="param"><span class="param-key">d<sub>min</sub></span><span class="param-val">3</span></div>
+          <div class="param"><span class="param-key">Скорость кода R</span><span class="param-val">4/7 ≈ 0.571</span></div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Возможности</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">Обнаружение до 2 ошибок</div>
+          <div class="capability ok-cap">Исправление 1 ошибки</div>
+          <div class="capability warn-cap">Не может исправить 2+ ошибки</div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Формула Хэмминга</h3>
+        <p class="theory-text">
+          Для кода Хэмминга (n, k) выполняется:
+        </p>
+        <div class="formula">
+          2<sup>r</sup> ≥ n + 1, где r = n − k
+        </div>
+        <p class="theory-text" style="margin-top: 12px;">
+          Для r=3: 2³ = 8 ≥ 7 + 1 = 8 ✓
+        </p>
+      </div>
+
+      <div class="theory-block">
+        <h3>Расширенный код Хэмминга</h3>
+        <p class="theory-text">
+          Добавление общего бита чётности p0 даёт код (8,4) с d<sub>min</sub> = 4.
+          Это позволяет исправлять 1 ошибку и обнаруживать 2 (SEC-DED).
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
