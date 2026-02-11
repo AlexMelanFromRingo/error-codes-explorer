@@ -1,0 +1,51 @@
+@if (isOpen()) {
+  <div class="overlay" (click)="closeSidebar.emit()"></div>
+}
+
+<aside class="sidebar" [class.open]="isOpen()">
+  <!-- Logo -->
+  <div class="sidebar-header">
+    <a routerLink="/" class="logo" (click)="closeSidebar.emit()">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-title">ECC Explorer</span>
+        <span class="logo-sub">Error Correction Codes</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Навигация</div>
+
+    @for (item of navItems; track item.id) {
+      <a [routerLink]="item.route"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{exact: item.id === 'home'}"
+         class="nav-item"
+         (click)="closeSidebar.emit()">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon"/>
+        </svg>
+        <span class="nav-label">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="nav-badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+    <div class="footer-info">
+      <svg class="footer-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.702 50.702 0 017.74-3.342"/>
+      </svg>
+      <span>Интерактивная методичка</span>
+    </div>
+  </div>
+</aside>

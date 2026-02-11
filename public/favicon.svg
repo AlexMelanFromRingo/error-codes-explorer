@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="bits" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Background rounded square -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+  <!-- Inner dark area -->
+  <rect x="64" y="64" width="384" height="384" rx="72" fill="#0f172a" opacity="0.85"/>
+  <!-- Binary matrix grid - representing error correction -->
+  <g filter="url(#glow)" fill="url(#bits)" font-family="monospace" font-weight="bold" font-size="52" text-anchor="middle">
+    <!-- Row 1 -->
+    <text x="148" y="178" opacity="0.5">1</text>
+    <text x="220" y="178">0</text>
+    <text x="292" y="178" opacity="0.5">1</text>
+    <text x="364" y="178">1</text>
+    <!-- Row 2 -->
+    <text x="148" y="248">0</text>
+    <text x="220" y="248" opacity="0.5">1</text>
+    <text x="292" y="248">1</text>
+    <text x="364" y="248" opacity="0.5">0</text>
+    <!-- Row 3 -->
+    <text x="148" y="318" opacity="0.5">1</text>
+    <text x="220" y="318">1</text>
+    <text x="292" y="318" opacity="0.5">0</text>
+    <text x="364" y="318">1</text>
+  </g>
+  <!-- Error highlight - red circle on one bit -->
+  <circle cx="292" cy="233" r="28" fill="none" stroke="#ef4444" stroke-width="3" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.4;0.9" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Correction arrow -->
+  <g stroke="#22c55e" stroke-width="3" fill="none" opacity="0.85">
+    <path d="M292 270 L292 300" stroke-linecap="round"/>
+    <path d="M282 290 L292 300 L302 290" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Checkmark for correction -->
+  <g transform="translate(292, 345)" stroke="#22c55e" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-14 0 L-4 10 L14 -10"/>
+  </g>
+  <!-- Parity bits accent dots -->
+  <circle cx="108" cy="165" r="6" fill="#f59e0b" opacity="0.7"/>
+  <circle cx="108" cy="235" r="6" fill="#f59e0b" opacity="0.7"/>
+  <circle cx="108" cy="305" r="6" fill="#f59e0b" opacity="0.7"/>
+  <circle cx="108" cy="375" r="6" fill="#f59e0b" opacity="0.5"/>
+  <!-- Bottom label -->
+  <text x="256" y="410" fill="white" font-family="system-ui, sans-serif" font-size="36" font-weight="700" text-anchor="middle" letter-spacing="4" opacity="0.9">ECC</text>
+</svg>

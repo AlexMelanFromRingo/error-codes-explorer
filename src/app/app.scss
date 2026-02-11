@@ -1,0 +1,26 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - var(--toolbar-height));
+
+  @media (min-width: 768px) {
+    padding: 32px;
+  }
+
+  @media (min-width: 1280px) {
+    padding: 40px;
+  }
+}
