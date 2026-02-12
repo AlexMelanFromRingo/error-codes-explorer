@@ -1,0 +1,116 @@
+.page { max-width: 900px; margin: 0 auto; }
+.page-header { margin-bottom: 32px; }
+.page-title { font-size: 2rem; font-weight: 800; margin: 12px 0 8px; @media (min-width: 768px) { font-size: 2.5rem; } }
+.page-desc { color: var(--color-text-secondary); font-size: 0.95rem; line-height: 1.7; max-width: 700px; }
+.section { margin-bottom: 24px; }
+
+// ── Interactive Matrix ──
+.matrix-interactive { display: inline-flex; flex-direction: column; gap: 2px; }
+.matrix-labels-top { display: flex; gap: 2px; }
+.matrix-corner { width: 36px; height: 20px; }
+.matrix-col-hdr, .matrix-row-hdr {
+  font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600;
+  color: var(--color-text-muted); display: flex; align-items: center; justify-content: center;
+}
+.matrix-col-hdr { width: 36px; height: 20px; }
+.matrix-row-hdr { width: 36px; height: 36px; }
+.matrix-row-interactive { display: flex; gap: 2px; align-items: center; }
+
+.matrix-cell-interactive {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600;
+  border-radius: 4px; cursor: pointer; transition: all 0.2s;
+
+  &.cell-one { background: rgba(6,182,212,0.2); color: #22d3ee; }
+  &.cell-zero { background: rgba(255,255,255,0.03); color: var(--color-text-muted); }
+  &:hover { transform: scale(1.1); outline: 2px solid rgba(99,102,241,0.4); }
+}
+
+.matrix-stats {
+  display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;
+}
+.stat {
+  display: flex; flex-direction: column; gap: 2px; padding: 8px 14px;
+  border-radius: var(--radius-sm); background: rgba(0,0,0,0.2); border: 1px solid var(--color-border);
+}
+.stat-label { font-size: 0.65rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-value { font-size: 0.9rem; font-weight: 600; &.mono { font-family: var(--font-mono); font-size: 0.8rem; } }
+
+// ── Tanner Graph ──
+.tanner-container {
+  background: rgba(0,0,0,0.3); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  padding: 16px; overflow-x: auto;
+}
+.tanner-svg { width: 100%; max-width: 600px; display: block; margin: 0 auto; }
+.tanner-edge { stroke: rgba(255,255,255,0.15); stroke-width: 1.5; }
+.tanner-var-node {
+  fill: rgba(6,182,212,0.15); stroke: #22d3ee; stroke-width: 2; cursor: pointer;
+  transition: all 0.2s;
+  &:hover { fill: rgba(6,182,212,0.3); }
+  &.node-error { fill: rgba(239,68,68,0.2); stroke: #f87171; }
+}
+.tanner-check-node { fill: rgba(245,158,11,0.15); stroke: #fbbf24; stroke-width: 2; }
+.tanner-label { text-anchor: middle; dominant-baseline: central; font-family: var(--font-mono); font-size: 12px; font-weight: 600; fill: white; }
+.tanner-name { text-anchor: middle; font-family: var(--font-mono); font-size: 10px; fill: var(--color-text-muted); }
+
+// ── Bits Row ──
+.bits-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; &.compact { gap: 4px; } }
+.action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+.error-count { font-size: 0.85rem; color: var(--color-text-secondary); font-family: var(--font-mono); }
+
+.bit-cell.small { width: 36px; height: 36px; font-size: 0.9rem; }
+
+// ── LLR ──
+.llr-section { margin-top: 20px; }
+.llr-label { font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 8px; }
+.llr-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; &.compact { gap: 4px; } }
+.llr-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-border);
+  font-family: var(--font-mono); font-size: 0.8rem; min-width: 56px;
+  &.llr-positive { border-color: rgba(16,185,129,0.2); .llr-val { color: #34d399; } }
+  &.llr-negative { border-color: rgba(239,68,68,0.2); .llr-val { color: #f87171; } }
+  &.small { padding: 4px 6px; min-width: 48px; font-size: 0.75rem; }
+}
+.llr-val { font-weight: 600; }
+.llr-pos { font-size: 0.6rem; color: var(--color-text-muted); }
+.llr-explain { font-size: 0.8rem; color: var(--color-text-muted); }
+
+// ── Iteration selector ──
+.iter-selector { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.iter-label { font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary); }
+.iter-ok { color: #34d399; font-size: 0.7rem; margin-left: 2px; }
+
+.iter-details { display: flex; flex-direction: column; gap: 16px; }
+.iter-row { display: flex; flex-direction: column; gap: 6px; }
+.iter-row-label { font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); }
+
+.iter-status {
+  padding: 10px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.9rem;
+  &.ok { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
+  &.pending { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #fbbf24; }
+}
+
+// ── Result ──
+.result-message {
+  padding: 12px 16px; border-radius: var(--radius-md); font-weight: 600; margin-bottom: 16px;
+  &.ok { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
+  &.fail { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
+}
+.result-comparison { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+.result-row { display: flex; align-items: center; gap: 12px; }
+.result-label { font-size: 0.85rem; color: var(--color-text-secondary); min-width: 110px; }
+.result-bits { font-family: var(--font-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.15em; }
+.error-text { color: #f87171; }
+.ok-text { color: #34d399; }
+
+// ── Theory ──
+.theory-grid { display: grid; gap: 16px; @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); } }
+.theory-block {
+  padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: rgba(0,0,0,0.15);
+  h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+}
+.theory-text { font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 8px; }
+.capability-list { display: flex; flex-direction: column; gap: 6px; }
+.capability { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; }
+.ok-cap { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); color: #34d399; }

@@ -1,1 +1,316 @@
-<p>ldpc works!</p>
+<div class="page animate-fade-in">
+  <div class="page-header">
+    <span class="badge badge-cyan">LDPC</span>
+    <h1 class="page-title">LDPC-коды</h1>
+    <p class="page-desc">
+      Low-Density Parity-Check — линейные коды с разреженной проверочной матрицей.
+      Изобретены Робертом Галлагером в 1962, заново открыты в 1996. Декодируются итеративно
+      алгоритмом Belief Propagation через граф Таннера. Приближаются к пределу Шеннона.
+    </p>
+  </div>
+
+  <!-- ═══════ STEP 1: Parity-Check Matrix ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">1</div>
+      <div class="step-label">Разреженная проверочная матрица H</div>
+    </div>
+
+    <p class="section-desc">
+      Определяющее свойство LDPC — малое число единиц в матрице H. Кликните на ячейку, чтобы переключить значение.
+      «Разреженность» означает, что большинство элементов матрицы равны 0.
+    </p>
+
+    <div class="matrix-container">
+      <div class="matrix-interactive">
+        <div class="matrix-labels-top">
+          <div class="matrix-corner"></div>
+          @for (j of range(numVarNodes()); track j) {
+            <div class="matrix-col-hdr">v{{ j }}</div>
+          }
+        </div>
+        @for (row of hMatrix(); track $index; let i = $index) {
+          <div class="matrix-row-interactive">
+            <div class="matrix-row-hdr">c{{ i }}</div>
+            @for (cell of row; track $index; let j = $index) {
+              <div class="matrix-cell-interactive"
+                   [class.cell-one]="cell === 1"
+                   [class.cell-zero]="cell === 0"
+                   (click)="toggleMatrixCell(i, j)">
+                {{ cell }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="matrix-stats">
+      <div class="stat">
+        <span class="stat-label">Размерность</span>
+        <span class="stat-value">{{ numCheckNodes() }} x {{ numVarNodes() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Разреженность</span>
+        <span class="stat-value">{{ (sparsity() * 100).toFixed(0) }}%</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Скорость R</span>
+        <span class="stat-value">{{ codeRate().toFixed(2) }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Вес строк</span>
+        <span class="stat-value mono">{{ rowWeights().join(', ') }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Вес столбцов</span>
+        <span class="stat-value mono">{{ colWeights().join(', ') }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 2: Tanner Graph ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">2</div>
+      <div class="step-label">Граф Таннера</div>
+    </div>
+
+    <p class="section-desc">
+      Двудольный граф, представляющий матрицу H. Круги наверху — переменные узлы (биты кодового слова),
+      квадраты внизу — проверочные узлы (уравнения чётности). Ребро соединяет v<sub>j</sub> и c<sub>i</sub>,
+      если H[i][j] = 1.
+    </p>
+
+    <div class="tanner-container">
+      <svg viewBox="0 0 600 200" class="tanner-svg">
+        <!-- Edges -->
+        @for (edge of tannerEdges(); track edge.from + edge.to) {
+          <line [attr.x1]="edge.x1" [attr.y1]="edge.y1"
+                [attr.x2]="edge.x2" [attr.y2]="edge.y2"
+                class="tanner-edge"/>
+        }
+        <!-- Variable nodes (circles) -->
+        @for (node of tannerNodes(); track node.id) {
+          @if (node.type === 'variable') {
+            <circle [attr.cx]="node.x" [attr.cy]="node.y" r="16"
+                    class="tanner-var-node"
+                    [class.node-error]="isError(+node.id.slice(1))"
+                    (click)="toggleError(+node.id.slice(1))"/>
+            <text [attr.x]="node.x" [attr.y]="node.y + 1" class="tanner-label">
+              {{ node.value }}
+            </text>
+            <text [attr.x]="node.x" [attr.y]="node.y - 22" class="tanner-name">
+              {{ node.label }}
+            </text>
+          }
+          @if (node.type === 'check') {
+            <rect [attr.x]="node.x - 14" [attr.y]="node.y - 14" width="28" height="28" rx="4"
+                  class="tanner-check-node"/>
+            <text [attr.x]="node.x" [attr.y]="node.y + 1" class="tanner-label">+</text>
+            <text [attr.x]="node.x" [attr.y]="node.y + 34" class="tanner-name">
+              {{ node.label }}
+            </text>
+          }
+        }
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 3: Error Injection ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">3</div>
+      <div class="step-label">Канал с ошибками</div>
+    </div>
+
+    <p class="section-desc">
+      Кликните на бит кодового слова в графе Таннера (или ниже), чтобы внести ошибку.
+      Исходное кодовое слово — все нули. Красные узлы — ошибки.
+    </p>
+
+    <div class="bits-row">
+      @for (bit of received(); track $index; let i = $index) {
+        <div class="bit-cell"
+             [class.bit-error]="isError(i)"
+             [class.bit-0]="!isError(i) && bit === 0"
+             [class.bit-1]="!isError(i) && bit === 1"
+             (click)="toggleError(i)">
+          {{ bit }}
+        </div>
+      }
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-danger btn-sm" (click)="randomErrors()">Случайные ошибки</button>
+      <button class="btn btn-sm" (click)="clearErrors()">Убрать ошибки</button>
+      <span class="error-count">Ошибок: {{ errorPositions().size }}</span>
+    </div>
+
+    <!-- Channel LLRs -->
+    <div class="llr-section">
+      <div class="llr-label">Канальные LLR (Log-Likelihood Ratio):</div>
+      <div class="llr-row">
+        @for (llr of channelLLR(); track $index; let i = $index) {
+          <div class="llr-cell" [class.llr-positive]="llr > 0" [class.llr-negative]="llr < 0">
+            <span class="llr-val">{{ formatLLR(llr) }}</span>
+            <span class="llr-pos">v{{ i }}</span>
+          </div>
+        }
+      </div>
+      <p class="llr-explain">
+        LLR > 0 → вероятнее бит 0; LLR &lt; 0 → вероятнее бит 1. Абсолютное значение — уверенность.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 4: Belief Propagation ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">4</div>
+      <div class="step-label">Итеративное декодирование (Belief Propagation)</div>
+    </div>
+
+    <p class="section-desc">
+      Алгоритм Min-Sum: на каждой итерации проверочные и переменные узлы обмениваются
+      сообщениями (LLR). Beliefs обновляются, и делается жёсткое решение. Процесс повторяется,
+      пока синдром не обнулится или не исчерпаются итерации.
+    </p>
+
+    @if (bpIterations().length > 0) {
+      <!-- Iteration selector -->
+      <div class="iter-selector">
+        <span class="iter-label">Итерация:</span>
+        <div class="toggle-group">
+          @for (iter of bpIterations(); track iter.iteration) {
+            <button class="toggle-btn" [class.active]="activeIteration() === iter.iteration - 1"
+                    (click)="setActiveIteration(iter.iteration - 1)">
+              {{ iter.iteration }}
+              @if (iter.syndromeOk) { <span class="iter-ok">&#10003;</span> }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Active iteration details -->
+      @if (bpIterations()[activeIteration()]; as iter) {
+        <div class="iter-details">
+          <div class="iter-row">
+            <span class="iter-row-label">Beliefs (LLR):</span>
+            <div class="llr-row compact">
+              @for (b of iter.beliefs; track $index; let i = $index) {
+                <div class="llr-cell small" [class.llr-positive]="b > 0" [class.llr-negative]="b < 0">
+                  {{ formatLLR(b) }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="iter-row">
+            <span class="iter-row-label">Декодировано:</span>
+            <div class="bits-row compact">
+              @for (bit of iter.decoded; track $index; let i = $index) {
+                <div class="bit-cell small"
+                     [class.bit-corrected]="isError(i) && bit === codeword()[i]"
+                     [class.bit-error]="bit !== codeword()[i]"
+                     [class.bit-0]="bit === codeword()[i] && bit === 0"
+                     [class.bit-1]="bit === codeword()[i] && bit === 1">
+                  {{ bit }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="iter-status" [class.ok]="iter.syndromeOk" [class.pending]="!iter.syndromeOk">
+            @if (iter.syndromeOk) {
+              Синдром = 0 — декодирование завершено!
+            } @else {
+              Синдром ≠ 0 — продолжаем итерации...
+            }
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <!-- ═══════ STEP 5: Result ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">5</div>
+      <div class="step-label">Результат</div>
+    </div>
+
+    <div class="result-message" [class.ok]="finalResult().converged" [class.fail]="!finalResult().converged">
+      @if (finalResult().converged) {
+        Декодирование успешно за {{ finalResult().iterations }} итераций
+      } @else {
+        Не сошлось за {{ finalResult().iterations }} итераций
+      }
+    </div>
+
+    <div class="result-comparison">
+      <div class="result-row">
+        <span class="result-label">Отправлено:</span>
+        <code class="result-bits">{{ codeword().join('') }}</code>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Получено:</span>
+        <code class="result-bits" [class.error-text]="errorPositions().size > 0">{{ received().join('') }}</code>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Декодировано:</span>
+        <code class="result-bits" [class.ok-text]="finalResult().converged">{{ finalResult().decoded.join('') }}</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ Theory ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">i</div>
+      <div class="step-label">Теоретическая справка</div>
+    </div>
+
+    <div class="theory-grid">
+      <div class="theory-block">
+        <h3>Что такое «разреженная матрица»?</h3>
+        <p class="theory-text">
+          В отличие от кодов Хэмминга, где матрица H плотная, в LDPC-кодах
+          число единиц в каждой строке и столбце мало относительно размерности.
+          Типичные значения: вес столбца d<sub>v</sub> = 3-6, вес строки d<sub>c</sub> = 6-30.
+          Это позволяет эффективно декодировать через передачу сообщений.
+        </p>
+      </div>
+
+      <div class="theory-block">
+        <h3>Алгоритмы декодирования</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">Sum-Product (точный, сложнее)</div>
+          <div class="capability ok-cap">Min-Sum (аппроксимация, быстрее)</div>
+          <div class="capability ok-cap">Offset Min-Sum (улучшенный)</div>
+          <div class="capability ok-cap">Layered BP (послойная обработка)</div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Применения</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">Wi-Fi 6/7 (802.11ax/be)</div>
+          <div class="capability ok-cap">5G NR (данные)</div>
+          <div class="capability ok-cap">DVB-S2/T2 (спутниковое ТВ)</div>
+          <div class="capability ok-cap">10GBASE-T Ethernet</div>
+          <div class="capability ok-cap">SSD/Flash-память</div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Предел Шеннона</h3>
+        <p class="theory-text">
+          Теоретический максимум скорости безошибочной передачи для данного канала.
+          Современные LDPC-коды работают в пределах 0.0045 дБ от предела Шеннона
+          (для длины блока ~10<sup>7</sup>). Это один из лучших результатов среди всех кодов.
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
