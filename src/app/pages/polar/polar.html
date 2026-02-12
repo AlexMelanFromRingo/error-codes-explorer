@@ -1,1 +1,271 @@
-<p>polar works!</p>
+<div class="page animate-fade-in">
+  <div class="page-header">
+    <span class="badge badge-emerald">Polar Codes</span>
+    <h1 class="page-title">Полярные коды</h1>
+    <p class="page-desc">
+      Первые коды, для которых доказано достижение пропускной способности канала (Эрдал Арыкан, 2009).
+      Используют феномен поляризации каналов: при рекурсивном комбинировании каналы
+      «поляризуются» в полностью надёжные и полностью ненадёжные. Стандарт 5G NR для управляющих каналов.
+    </p>
+  </div>
+
+  <!-- ═══════ STEP 1: Channel Polarization ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">1</div>
+      <div class="step-label">Поляризация каналов</div>
+    </div>
+
+    <p class="section-desc">
+      Параметры Бхаттачарьи Z(W) показывают надёжность каждого виртуального канала.
+      Z = 0 — идеальный канал, Z = 1 — полностью ненадёжный.
+      Лучшие K каналов используются для данных (зелёные), остальные «замораживаются» (серые).
+    </p>
+
+    <div class="channels-display">
+      @for (ch of channels(); track ch.index) {
+        <div class="channel-bar" [class.ch-info]="ch.type === 'info'" [class.ch-frozen]="ch.type === 'frozen'">
+          <div class="bar-fill" [style.height.%]="ch.reliability * 100"></div>
+          <span class="bar-label">u{{ ch.index }}</span>
+          <span class="bar-type">{{ ch.type === 'info' ? 'инф.' : 'замор.' }}</span>
+          <span class="bar-z">Z={{ ch.bhattacharyya.toFixed(3) }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="channel-info">
+      <span class="badge badge-emerald">Информ. каналы: {{ infoBitIndices().join(', ') }}</span>
+      <span class="badge badge-amber">Замороженные: {{ frozenBitIndices().join(', ') }}</span>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 2: Generator Matrix ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">2</div>
+      <div class="step-label">Порождающая матрица G<sub>N</sub> = F<sup>⊗n</sup></div>
+    </div>
+
+    <p class="section-desc">
+      Матрица кодирования — n-кратное произведение Кронекера базовой матрицы
+      F = [[1,0],[1,1]]. Для N = {{ N() }}, n = {{ logN() }}.
+      Кодовое слово: x = u · G<sub>N</sub> (mod 2).
+    </p>
+
+    <div class="matrix-container">
+      <div class="gen-matrix">
+        @for (row of generatorMatrix(); track $index; let i = $index) {
+          <div class="gen-row">
+            @for (cell of row; track $index; let j = $index) {
+              <div class="matrix-cell" [class.cell-1]="cell === 1" [class.cell-0]="cell === 0">
+                {{ cell }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 3: Butterfly Diagram ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">3</div>
+      <div class="step-label">Butterfly-диаграмма кодирования</div>
+    </div>
+
+    <p class="section-desc">
+      Кодирование полярных кодов эквивалентно рекурсивному butterfly-преобразованию.
+      На каждом этапе пары битов комбинируются через XOR (⊕). Это аналог FFT-бабочки.
+    </p>
+
+    <div class="butterfly-container">
+      <svg [attr.viewBox]="'0 0 ' + (butterflyStages().length * 120 + 120) + ' ' + (N() * 40 + 20)" class="butterfly-svg">
+        <!-- Input labels -->
+        @for (i of range(N()); track i) {
+          <text [attr.x]="10" [attr.y]="i * 40 + 30" class="bf-label"
+                [class.bf-frozen]="frozenBits().has(i)">
+            u{{ i }}{{ frozenBits().has(i) ? '=0' : '' }}
+          </text>
+          <!-- Horizontal lines through all stages -->
+          <line [attr.x1]="50" [attr.y1]="i * 40 + 26"
+                [attr.x2]="butterflyStages().length * 120 + 70" [attr.y2]="i * 40 + 26"
+                class="bf-wire"/>
+        }
+
+        <!-- Stages -->
+        @for (stage of butterflyStages(); track $index; let s = $index) {
+          @for (pair of stage.pairs; track pair.top + '-' + pair.bottom) {
+            <!-- XOR connections -->
+            <line [attr.x1]="s * 120 + 80" [attr.y1]="pair.bottom * 40 + 26"
+                  [attr.x2]="s * 120 + 80" [attr.y2]="pair.top * 40 + 26"
+                  class="bf-cross"/>
+            <circle [attr.cx]="s * 120 + 80" [attr.cy]="pair.top * 40 + 26" r="4" class="bf-xor"/>
+          }
+        }
+
+        <!-- Output labels -->
+        @for (i of range(N()); track i) {
+          <text [attr.x]="butterflyStages().length * 120 + 80" [attr.y]="i * 40 + 30" class="bf-output">
+            x{{ i }}={{ encoded()[i] }}
+          </text>
+        }
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 4: Input & Encoding ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">4</div>
+      <div class="step-label">Ввод данных и кодирование</div>
+    </div>
+
+    <p class="section-desc">
+      Информационные биты размещаются в надёжных каналах. Замороженные биты всегда = 0.
+    </p>
+
+    <div class="input-section">
+      <div class="input-label">Информационные биты (K = {{ K() }}):</div>
+      <div class="bits-row">
+        @for (bit of infoBits(); track $index; let i = $index) {
+          <div class="bit-input-group">
+            <span class="bit-pos-label">u{{ infoBitIndices()[i] }}</span>
+            <div class="bit-cell" [class.bit-0]="bit === 0" [class.bit-1]="bit === 1"
+                 (click)="toggleInfoBit(i)">
+              {{ bit }}
+            </div>
+          </div>
+        }
+      </div>
+      <div class="action-row">
+        <button class="btn btn-sm" (click)="randomInfoBits()">Случайные данные</button>
+      </div>
+    </div>
+
+    <div class="vectors-section">
+      <div class="vector-row">
+        <span class="vector-label">u (вход):</span>
+        <div class="vector-bits">
+          @for (bit of inputVector(); track $index; let i = $index) {
+            <span class="v-bit" [class.v-frozen]="frozenBits().has(i)" [class.v-info]="!frozenBits().has(i)">{{ bit }}</span>
+          }
+        </div>
+      </div>
+      <div class="vector-row">
+        <span class="vector-label">x (код):</span>
+        <div class="vector-bits">
+          @for (bit of encoded(); track $index) {
+            <span class="v-bit v-encoded">{{ bit }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 5: Error Injection ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">5</div>
+      <div class="step-label">Канал с ошибками + SC-декодирование</div>
+    </div>
+
+    <p class="section-desc">
+      Внесите ошибки кликом по битам. Successive Cancellation (SC) декодер обрабатывает биты
+      последовательно от u<sub>0</sub> до u<sub>N-1</sub>, используя информацию от канала и уже декодированных битов.
+    </p>
+
+    <div class="bits-row">
+      @for (bit of received(); track $index; let i = $index) {
+        <div class="bit-cell"
+             [class.bit-error]="isError(i)"
+             [class.bit-0]="!isError(i) && bit === 0"
+             [class.bit-1]="!isError(i) && bit === 1"
+             (click)="toggleError(i)">
+          {{ bit }}
+        </div>
+      }
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-danger btn-sm" (click)="randomError()">Случайная ошибка</button>
+      <button class="btn btn-sm" (click)="clearErrors()">Убрать ошибки</button>
+    </div>
+
+    <div class="result-message" [class.ok]="decodingSuccess()" [class.fail]="!decodingSuccess()">
+      @if (decodingSuccess()) {
+        SC-декодирование успешно!
+      } @else {
+        Ошибка декодирования — данные повреждены
+      }
+    </div>
+
+    <div class="result-comparison">
+      <div class="result-row">
+        <span class="result-label">Отправлено:</span>
+        <code class="result-bits">{{ encoded().join('') }}</code>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Получено:</span>
+        <code class="result-bits" [class.error-text]="errorPositions().size > 0">{{ received().join('') }}</code>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Декодировано u:</span>
+        <code class="result-bits" [class.ok-text]="decodingSuccess()">{{ decoded().join('') }}</code>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Инфо. биты:</span>
+        <code class="result-bits">{{ infoBits().join('') }} → {{ decodedInfoBits().join('') }}</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ Theory ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">i</div>
+      <div class="step-label">Теоретическая справка</div>
+    </div>
+
+    <div class="theory-grid">
+      <div class="theory-block">
+        <h3>Параметры кода</h3>
+        <div class="param-list">
+          <div class="param"><span class="param-key">N (длина блока)</span><span class="param-val">{{ N() }}</span></div>
+          <div class="param"><span class="param-key">K (инф. битов)</span><span class="param-val">{{ K() }}</span></div>
+          <div class="param"><span class="param-key">n = log₂(N)</span><span class="param-val">{{ logN() }}</span></div>
+          <div class="param"><span class="param-key">Скорость R</span><span class="param-val">{{ (K() / N()).toFixed(2) }}</span></div>
+          <div class="param"><span class="param-key">Замороженных</span><span class="param-val">{{ N() - K() }}</span></div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Поляризация</h3>
+        <p class="theory-text">
+          При N → ∞ доля каналов с Z(W) → 0 стремится к пропускной способности I(W),
+          а доля каналов с Z(W) → 1 стремится к 1 − I(W).
+          Промежуточных каналов становится исчезающе мало — это и есть поляризация.
+        </p>
+      </div>
+
+      <div class="theory-block">
+        <h3>Алгоритмы декодирования</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">SC — Successive Cancellation (базовый)</div>
+          <div class="capability ok-cap">SCL — SC List (с CRC-aided)</div>
+          <div class="capability ok-cap">BP — Belief Propagation</div>
+          <div class="capability ok-cap">SCAN — Soft Cancellation</div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Применения</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">5G NR — управляющие каналы (PDCCH, PUCCH)</div>
+          <div class="capability ok-cap">Huawei, Qualcomm, Samsung — аппаратные декодеры</div>
+          <div class="capability ok-cap">Исследования: квантовые коды коррекции</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
