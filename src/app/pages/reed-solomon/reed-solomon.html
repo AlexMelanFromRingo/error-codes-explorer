@@ -1,1 +1,336 @@
-<p>reed-solomon works!</p>
+<div class="page animate-fade-in">
+  <div class="page-header">
+    <span class="badge badge-indigo">Reed-Solomon</span>
+    <h1 class="page-title">Код Рида-Соломона</h1>
+    <p class="page-desc">
+      Недвоичный циклический код, работающий над конечным полем Галуа GF(2<sup>8</sup>).
+      В отличие от кода Хэмминга, оперирует символами (байтами), а не отдельными битами,
+      что позволяет исправлять пакетные ошибки. Используется в QR-кодах, CD/DVD, DVB, Deep Space Network.
+    </p>
+  </div>
+
+  <!-- ═══════ STEP 1: Input ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">1</div>
+      <div class="step-label">Входное сообщение</div>
+    </div>
+
+    <p class="section-desc">
+      Введите текст. Каждый символ будет представлен как элемент поля GF(2<sup>8</sup>) — байт от 0x00 до 0xFF.
+    </p>
+
+    <div class="input-group">
+      <label class="input-label">Сообщение:</label>
+      <input class="input" type="text" [value]="messageInput()" (input)="onMessageInput($event)" placeholder="Введите текст...">
+    </div>
+
+    <div class="config-row">
+      <div class="config-item">
+        <label class="input-label">Символов коррекции (2t):</label>
+        <div class="toggle-group">
+          @for (n of [2,4,6,8]; track n) {
+            <button class="toggle-btn" [class.active]="nSymbols() === n" (click)="setNSymbols(n)">{{ n }}</button>
+          }
+        </div>
+      </div>
+      <div class="config-item">
+        <span class="badge badge-cyan">Макс. ошибок: {{ maxErrors() }}</span>
+      </div>
+    </div>
+
+    <!-- Message bytes display -->
+    <div class="bytes-section">
+      <div class="bytes-label">Байты сообщения:</div>
+      <div class="bytes-row">
+        @for (byte of messageBytes(); track $index; let i = $index) {
+          <div class="byte-cell">
+            <span class="byte-char">{{ messageInput()[i] }}</span>
+            <span class="byte-hex">{{ toHex(byte) }}</span>
+            <span class="byte-pos">{{ i }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 2: GF Arithmetic ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">2</div>
+      <div class="step-label">Арифметика поля Галуа GF(2<sup>8</sup>)</div>
+    </div>
+
+    <p class="section-desc">
+      Все операции в коде Рида-Соломона выполняются в конечном поле GF(2<sup>8</sup>) = GF(256).
+      Поле строится как GF(2)[x] / (x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x<sup>2</sup> + 1).
+      Сложение — XOR, умножение — через таблицы логарифмов. Ниже — фрагмент таблицы умножения:
+    </p>
+
+    <div class="matrix-container">
+      <table class="data-table gf-table">
+        <thead>
+          <tr>
+            <th>*</th>
+            @for (j of range(8); track j) {
+              <th>{{ j }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of gfMulTable(); track $index; let i = $index) {
+            <tr>
+              <td class="row-header">{{ i }}</td>
+              @for (cell of row; track $index) {
+                <td [class.cell-zero]="cell === 0">{{ cell }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gf-info">
+      <div class="gf-fact">
+        <strong>Примитивный полином:</strong>
+        <code>p(x) = x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x<sup>2</sup> + 1</code>
+        <span class="mono">(0x11D)</span>
+      </div>
+      <div class="gf-fact">
+        <strong>Примитивный элемент:</strong> α = 2 (генератор мультипликативной группы)
+      </div>
+      <div class="gf-fact">
+        <strong>Порядок группы:</strong> 255 (α<sup>255</sup> = 1)
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 3: Generator Polynomial ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">3</div>
+      <div class="step-label">Порождающий полином</div>
+    </div>
+
+    <p class="section-desc">
+      Порождающий полином g(x) определяет код. Для RS(n, k) с 2t символами коррекции:
+      g(x) = (x − α<sup>0</sup>)(x − α<sup>1</sup>)...(x − α<sup>2t−1</sup>).
+      Корни g(x) — последовательные степени примитивного элемента.
+    </p>
+
+    <div class="poly-display">
+      <div class="poly-label">g(x) для 2t = {{ nSymbols() }}:</div>
+      <code class="poly-value">{{ formatPoly(generatorPoly()) }}</code>
+    </div>
+
+    <div class="poly-coeffs">
+      <span class="poly-coeffs-label">Коэффициенты (hex):</span>
+      <div class="coeffs-row">
+        @for (c of generatorPoly(); track $index) {
+          <span class="coeff-badge">{{ toHex(c) }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 4: Encoding ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">4</div>
+      <div class="step-label">Кодирование</div>
+    </div>
+
+    <p class="section-desc">
+      Систематическое кодирование: сообщение остаётся в начале, к нему дописываются {{ nSymbols() }}
+      символов коррекции (остаток от деления m(x)·x<sup>2t</sup> на g(x)).
+    </p>
+
+    <div class="encoded-display">
+      @for (byte of encoded(); track $index; let i = $index) {
+        <div class="byte-cell" [class.byte-data]="i < messageBytes().length" [class.byte-parity]="i >= messageBytes().length">
+          <span class="byte-hex">{{ toHex(byte) }}</span>
+          <span class="byte-pos">{{ i }}</span>
+          <span class="byte-type">{{ i < messageBytes().length ? 'дан.' : 'корр.' }}</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 5: Error Injection ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">5</div>
+      <div class="step-label">Инъекция ошибок</div>
+    </div>
+
+    <p class="section-desc">
+      Кликните на байты, чтобы внести ошибки (инвертируются все биты байта).
+      Можно внести до {{ maxErrors() }} ошибок. Красные — повреждённые байты.
+    </p>
+
+    <div class="encoded-display">
+      @for (byte of received(); track $index; let i = $index) {
+        <div class="byte-cell" [class.byte-error]="isErrorPosition(i)"
+             [class.byte-data]="!isErrorPosition(i) && i < messageBytes().length"
+             [class.byte-parity]="!isErrorPosition(i) && i >= messageBytes().length"
+             (click)="toggleError(i)">
+          <span class="byte-hex">{{ toHex(byte) }}</span>
+          <span class="byte-pos">{{ i }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-danger btn-sm" (click)="randomErrors()">Случайные ошибки</button>
+      <button class="btn btn-sm" (click)="clearErrors()">Убрать ошибки</button>
+      <span class="error-count">
+        Ошибок: {{ errorPositions().size }} / {{ maxErrors() }}
+      </span>
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 6: Syndromes ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">6</div>
+      <div class="step-label">Вычисление синдромов</div>
+    </div>
+
+    <p class="section-desc">
+      Синдром S<sub>i</sub> = r(α<sup>i</sup>), где r(x) — принятый полином.
+      Если все синдромы равны 0, ошибок нет. Иначе синдромы содержат информацию о позициях и величинах ошибок.
+    </p>
+
+    <div class="syndromes-display">
+      @for (s of syndromes().slice(1); track $index; let i = $index) {
+        <div class="syndrome-cell" [class.syn-zero]="s === 0" [class.syn-nonzero]="s !== 0">
+          <span class="syn-name">S<sub>{{ i }}</sub></span>
+          <span class="syn-value">{{ toHex(s) }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="syndrome-verdict" [class.ok]="!hasErrors()" [class.error]="hasErrors()">
+      @if (!hasErrors()) {
+        Все синдромы = 0 — ошибок нет
+      } @else {
+        Обнаружены ненулевые синдромы — выполняется декодирование
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 7: Decoding Pipeline ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">7</div>
+      <div class="step-label">Конвейер декодирования</div>
+    </div>
+
+    <p class="section-desc">
+      Декодирование RS проходит в три этапа: 1) Алгоритм Берлекэмпа-Мэсси находит полином-локатор ошибок,
+      2) Поиск Ченя находит позиции ошибок, 3) Алгоритм Форни вычисляет величины ошибок.
+    </p>
+
+    <div class="pipeline">
+      @for (step of correctionResult().steps; track $index; let i = $index) {
+        <div class="pipeline-step">
+          <div class="pipeline-num">{{ i + 1 }}</div>
+          <div class="pipeline-content">
+            <div class="pipeline-title">{{ step.title }}</div>
+            <div class="pipeline-desc">{{ step.description }}</div>
+            @if (step.data) {
+              <code class="pipeline-data">{{ step.data }}</code>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- ═══════ STEP 8: Result ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">8</div>
+      <div class="step-label">Результат</div>
+    </div>
+
+    <div class="result-message" [class.ok]="correctionResult().success" [class.fail]="!correctionResult().success">
+      {{ correctionResult().message }}
+    </div>
+
+    @if (correctionResult().success) {
+      <div class="result-comparison">
+        <div class="result-row">
+          <span class="result-label">Отправлено:</span>
+          <code class="result-hex">{{ encoded().map(toHex).join(' ') }}</code>
+        </div>
+        @if (hasErrors()) {
+          <div class="result-row">
+            <span class="result-label">Получено:</span>
+            <code class="result-hex error-text">{{ received().map(toHex).join(' ') }}</code>
+          </div>
+          <div class="result-row">
+            <span class="result-label">Исправлено:</span>
+            <code class="result-hex ok-text">{{ correctionResult().corrected.map(toHex).join(' ') }}</code>
+          </div>
+        }
+        <div class="result-row">
+          <span class="result-label">Сообщение:</span>
+          <code class="result-text">{{ decodedMessage() }}</code>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- ═══════ Theory ═══════ -->
+  <section class="card section">
+    <div class="step-indicator">
+      <div class="step-num">i</div>
+      <div class="step-label">Теоретическая справка</div>
+    </div>
+
+    <div class="theory-grid">
+      <div class="theory-block">
+        <h3>Параметры кода RS(n, k)</h3>
+        <div class="param-list">
+          <div class="param"><span class="param-key">n (длина кодового слова)</span><span class="param-val">{{ encoded().length }}</span></div>
+          <div class="param"><span class="param-key">k (информ. символов)</span><span class="param-val">{{ messageBytes().length }}</span></div>
+          <div class="param"><span class="param-key">2t (символов коррекции)</span><span class="param-val">{{ nSymbols() }}</span></div>
+          <div class="param"><span class="param-key">t (макс. ошибок)</span><span class="param-val">{{ maxErrors() }}</span></div>
+          <div class="param"><span class="param-key">d<sub>min</sub></span><span class="param-val">{{ nSymbols() + 1 }}</span></div>
+          <div class="param"><span class="param-key">Поле</span><span class="param-val">GF(2<sup>8</sup>)</span></div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Граница Синглтона</h3>
+        <p class="theory-text">
+          RS-коды являются кодами с максимальным расстоянием (MDS-коды):
+        </p>
+        <div class="formula">d<sub>min</sub> = n − k + 1 = 2t + 1</div>
+        <p class="theory-text" style="margin-top:12px">
+          Это означает, что при фиксированных n и k невозможно создать код с большим минимальным расстоянием.
+        </p>
+      </div>
+
+      <div class="theory-block">
+        <h3>Применения</h3>
+        <div class="capability-list">
+          <div class="capability ok-cap">QR-коды (4 уровня коррекции)</div>
+          <div class="capability ok-cap">CD/DVD/Blu-ray (CIRC)</div>
+          <div class="capability ok-cap">DVB-T/S/C (цифровое ТВ)</div>
+          <div class="capability ok-cap">Deep Space Network (NASA)</div>
+          <div class="capability ok-cap">RAID-6 (два диска чётности)</div>
+        </div>
+      </div>
+
+      <div class="theory-block">
+        <h3>Пакетные vs. одиночные ошибки</h3>
+        <p class="theory-text">
+          RS-код, исправляющий t символов, может исправить пакет из до t·m = {{ maxErrors() * 8 }} последовательных
+          битовых ошибок (m = 8 для GF(2<sup>8</sup>)). Это ключевое преимущество над двоичными кодами.
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
