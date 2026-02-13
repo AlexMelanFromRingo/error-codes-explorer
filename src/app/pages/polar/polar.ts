@@ -49,24 +49,12 @@ function bitReverse(x: number, bits: number): number {
   return result;
 }
 
-// Successive Cancellation decoding for BEC
+// Successive Cancellation decoding
 function scDecode(received: number[], frozenBits: Set<number>, N: number): number[] {
-  const n = Math.log2(N);
   const decoded: number[] = new Array(N).fill(0);
-  const llr: number[][] = [];
-
-  // Initialize LLRs from received signal
-  // For BSC: LLR = (-1)^y * channel_reliability
-  const reliability = 2.0; // channel reliability
-  for (let s = 0; s <= n; s++) {
-    llr[s] = new Array(N).fill(0);
-  }
-  for (let i = 0; i < N; i++) {
-    llr[n as number][i] = received[i] === 0 ? reliability : -reliability;
-  }
+  const reliability = 2.0;
 
   function f(a: number, b: number): number {
-    // min-sum approximation of f function
     const sign = (a >= 0 ? 1 : -1) * (b >= 0 ? 1 : -1);
     return sign * Math.min(Math.abs(a), Math.abs(b));
   }
@@ -75,38 +63,40 @@ function scDecode(received: number[], frozenBits: Set<number>, N: number): numbe
     return b + (1 - 2 * u) * a;
   }
 
-  // Simple SC decoder
-  function decode(stage: number, offset: number, size: number): void {
+  // Recursive SC decoder — returns encoded partial sums for parent's g-function
+  function decode(llr: number[], offset: number, size: number): number[] {
     if (size === 1) {
-      const idx = offset;
-      if (frozenBits.has(idx)) {
-        decoded[idx] = 0;
-      } else {
-        decoded[idx] = llr[stage][offset] < 0 ? 1 : 0;
-      }
-      return;
+      decoded[offset] = frozenBits.has(offset) ? 0 : (llr[0] < 0 ? 1 : 0);
+      return [decoded[offset]];
     }
 
     const half = size / 2;
 
-    // Compute f-values for upper half
+    // f-values for upper sub-decoder
+    const fLlr: number[] = new Array(half);
     for (let i = 0; i < half; i++) {
-      llr[stage - 1][offset + i] = f(llr[stage][offset + i], llr[stage][offset + half + i]);
+      fLlr[i] = f(llr[i], llr[half + i]);
     }
+    const upperEnc = decode(fLlr, offset, half);
 
-    // Decode upper half
-    decode(stage - 1, offset, half);
-
-    // Compute g-values for lower half
+    // g-values for lower sub-decoder (using encoded partial sums, not raw decoded bits)
+    const gLlr: number[] = new Array(half);
     for (let i = 0; i < half; i++) {
-      llr[stage - 1][offset + i] = g(llr[stage][offset + i], llr[stage][offset + half + i], decoded[offset + i]);
+      gLlr[i] = g(llr[i], llr[half + i], upperEnc[i]);
     }
+    const lowerEnc = decode(gLlr, offset + half, half);
 
-    // Decode lower half
-    decode(stage - 1, offset + half, half);
+    // Combine: butterfly output = [upper XOR lower, lower]
+    const combined: number[] = new Array(size);
+    for (let i = 0; i < half; i++) {
+      combined[i] = upperEnc[i] ^ lowerEnc[i];
+      combined[half + i] = lowerEnc[i];
+    }
+    return combined;
   }
 
-  decode(n as number, 0, N);
+  const initialLlr = received.map(bit => bit === 0 ? reliability : -reliability);
+  decode(initialLlr, 0, N);
   return decoded;
 }
 

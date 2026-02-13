@@ -2,13 +2,13 @@ import { Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // Small LDPC parity-check matrix H for demonstration
-// This is a regular (3,6) LDPC code: 6 variable nodes, 3 check nodes
-// Each check node connects to exactly 4 variable nodes
-// Each variable node connects to exactly 2 check nodes
+// This is a [8,4,3] LDPC code: 8 variable nodes, 4 check nodes
+// Column weights 2-3, row weights 5 — BP corrects all single-symbol errors
 const DEFAULT_H: number[][] = [
-  [1, 1, 0, 1, 1, 0],
-  [0, 1, 1, 0, 1, 1],
-  [1, 0, 1, 1, 0, 1],
+  [0, 1, 1, 1, 0, 1, 0, 1],
+  [0, 1, 1, 0, 1, 0, 1, 1],
+  [1, 0, 0, 1, 0, 1, 1, 1],
+  [1, 0, 1, 1, 1, 0, 1, 0],
 ];
 
 interface TannerNode {
@@ -50,7 +50,7 @@ export class Ldpc {
   hMatrix = signal<number[][]>(DEFAULT_H.map(r => [...r]));
 
   // Original codeword (all-zero is always a valid codeword for linear codes)
-  codeword = signal<number[]>([0, 0, 0, 0, 0, 0]);
+  codeword = signal<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
 
   // Channel noise: flip probability
   flipProb = signal(0.15);
