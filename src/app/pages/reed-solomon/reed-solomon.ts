@@ -171,30 +171,43 @@ function rsFindErrors(errLoc: number[], msgLen: number): number[] {
 }
 
 // Forney algorithm for error magnitudes
-function rsFindErrorMagnitudes(synd: number[], errPos: number[], msgLen: number): number[] {
+function rsFindErrorMagnitudes(synd: number[], errLoc: number[], errPos: number[], msgLen: number): number[] {
+  const nsym = synd.length - 1;
   const errCount = errPos.length;
   const errMag: number[] = new Array(msgLen).fill(0);
 
-  for (let i = 0; i < errCount; i++) {
-    const xi = gfExp[msgLen - 1 - errPos[i]];
-    const xiInv = gfInverse(xi);
+  // Build syndrome polynomial S(x) = S_0 + S_1·x + … + S_{nsym-1}·x^{nsym-1}
+  // In code format (highest degree first): [S_{nsym-1}, …, S_1, S_0]
+  const syndPoly: number[] = [];
+  for (let i = nsym; i >= 1; i--) {
+    syndPoly.push(synd[i]);
+  }
 
+  // Error evaluator polynomial: Ω(x) = S(x)·Λ(x) mod x^{nsym}
+  let omega = polyMul(syndPoly, errLoc);
+  if (omega.length > nsym) {
+    omega = omega.slice(omega.length - nsym);
+  }
+
+  for (let i = 0; i < errCount; i++) {
+    const Xi = gfExp[msgLen - 1 - errPos[i]];
+    const XiInv = gfInverse(Xi);
+
+    // Evaluate Ω(Xi⁻¹)
+    const omegaVal = polyEval(omega, XiInv);
+
+    // Λ'(Xi⁻¹) = Xi · ∏_{j≠i}(1 + Xj·Xi⁻¹), so errLocPrime = ∏_{j≠i}(…)
     let errLocPrime = 1;
     for (let j = 0; j < errCount; j++) {
       if (j !== i) {
-        const xj = gfExp[msgLen - 1 - errPos[j]];
-        errLocPrime = gfMul(errLocPrime, 1 ^ gfMul(xiInv, xj));
+        const Xj = gfExp[msgLen - 1 - errPos[j]];
+        errLocPrime = gfMul(errLocPrime, 1 ^ gfMul(XiInv, Xj));
       }
     }
-
     if (errLocPrime === 0) continue;
 
-    let omega = 0;
-    for (let j = 0; j < synd.length - 1; j++) {
-      omega ^= gfMul(synd[j + 1], gfPow(xi, j));
-    }
-
-    errMag[errPos[i]] = gfMul(omega, gfInverse(errLocPrime));
+    // Forney: e_k = Xi · Ω(Xi⁻¹) / Λ'(Xi⁻¹) = Ω(Xi⁻¹) / errLocPrime
+    errMag[errPos[i]] = gfDiv(omegaVal, errLocPrime);
   }
 
   return errMag;
@@ -312,7 +325,7 @@ export class ReedSolomon {
         data: `Позиции: [${errPos.join(', ')}]`,
       });
 
-      const errMag = rsFindErrorMagnitudes(synd, errPos, recv.length);
+      const errMag = rsFindErrorMagnitudes(synd, errLoc, errPos, recv.length);
       const corrected = [...recv];
       for (const pos of errPos) {
         corrected[pos] ^= errMag[pos];
