@@ -269,6 +269,91 @@
   }
 }
 
+// ── Decoder Select ──
+.decoder-select {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.decoder-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.error-count {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+
+// ── Decoder Comparison ──
+.decoders-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.decoder-result {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: rgba(0,0,0,0.15);
+  opacity: 0.6;
+  transition: all 0.2s;
+
+  &.decoder-active {
+    opacity: 1;
+    border-color: rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.05);
+  }
+}
+
+.decoder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.decoder-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.decoder-status {
+  font-size: 1.1rem;
+  font-weight: 700;
+  &.ok { color: #34d399; }
+  &.fail { color: #f87171; }
+}
+
+.decoder-bits {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  margin-bottom: 6px;
+  color: var(--color-text-primary);
+}
+
+.decoder-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+  .decoders-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
 // ── Result ──
 .result-message {
   padding: 12px 16px;
@@ -355,3 +440,36 @@
 .capability-list { display: flex; flex-direction: column; gap: 6px; }
 .capability { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; }
 .ok-cap { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); color: #34d399; }
+
+// ── Mobile ──
+@media (max-width: 480px) {
+  .page-title { font-size: 1.5rem; }
+  .page-desc { font-size: 0.85rem; }
+
+  .channel-bar { min-width: 36px; }
+  .bar-label { font-size: 0.6rem; }
+  .bar-type { font-size: 0.5rem; }
+  .bar-z { font-size: 0.45rem; }
+
+  .matrix-cell {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+  }
+
+  .gen-row { gap: 1px; }
+  .gen-matrix { gap: 1px; }
+
+  .butterfly-svg { min-width: 320px; }
+
+  .vector-row { flex-wrap: wrap; gap: 6px; }
+  .vector-label { min-width: auto; font-size: 0.8rem; }
+  .v-bit { width: 24px; height: 24px; font-size: 0.7rem; }
+
+  .result-label { min-width: auto; font-size: 0.8rem; }
+  .result-bits { font-size: 0.85rem; letter-spacing: 0.1em; word-break: break-all; }
+
+  .decoder-result { padding: 10px; }
+  .decoder-bits { font-size: 0.95rem; letter-spacing: 0.15em; }
+  .decoder-note { font-size: 0.7rem; }
+}

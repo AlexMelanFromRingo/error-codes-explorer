@@ -52,7 +52,7 @@ function bitReverse(x: number, bits: number): number {
 // Successive Cancellation decoding
 function scDecode(received: number[], frozenBits: Set<number>, N: number): number[] {
   const decoded: number[] = new Array(N).fill(0);
-  const reliability = 2.0;
+  const reliability = 6.0;
 
   function f(a: number, b: number): number {
     const sign = (a >= 0 ? 1 : -1) * (b >= 0 ? 1 : -1);
@@ -100,6 +100,45 @@ function scDecode(received: number[], frozenBits: Set<number>, N: number): numbe
   return decoded;
 }
 
+// ML decoding — brute force for short codes (N ≤ 16)
+// Try all possible info bit combinations, encode each, find closest to received
+function mlDecode(
+  received: number[],
+  frozenBits: Set<number>,
+  infoIndices: number[],
+  G: number[][],
+  N: number,
+  K: number
+): number[] {
+  let bestDist = N + 1;
+  let bestU: number[] = new Array(N).fill(0);
+
+  for (let mask = 0; mask < (1 << K); mask++) {
+    // Build u vector
+    const u = new Array(N).fill(0);
+    for (let k = 0; k < K; k++) {
+      u[infoIndices[k]] = (mask >> k) & 1;
+    }
+    // Encode: x = u * G mod 2
+    const x: number[] = new Array(N).fill(0);
+    for (let j = 0; j < N; j++) {
+      let sum = 0;
+      for (let i = 0; i < N; i++) sum += u[i] * G[i][j];
+      x[j] = sum % 2;
+    }
+    // Hamming distance
+    let dist = 0;
+    for (let j = 0; j < N; j++) {
+      if (x[j] !== received[j]) dist++;
+    }
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestU = u;
+    }
+  }
+  return bestU;
+}
+
 
 interface PolarChannel {
   index: number;
@@ -125,6 +164,9 @@ export class Polar {
 
   // Error injection
   errorPositions = signal<Set<number>>(new Set());
+
+  // Decoder type
+  decoderType = signal<'sc' | 'ml'>('ml');
 
   // n = log2(N)
   logN = computed(() => Math.log2(this.N()));
@@ -212,11 +254,25 @@ export class Polar {
   });
 
   // SC Decoding result
-  decoded = computed(() => {
+  decodedSC = computed(() => {
     const recv = this.received();
     const frozen = this.frozenBits();
     const N = this.N();
     return scDecode(recv, frozen, N);
+  });
+
+  // ML Decoding result
+  decodedML = computed(() => {
+    const recv = this.received();
+    const frozen = this.frozenBits();
+    const N = this.N();
+    const K = this.K();
+    return mlDecode(recv, frozen, this.infoBitIndices(), this.generatorMatrix(), N, K);
+  });
+
+  // Active decoded result based on selected decoder
+  decoded = computed(() => {
+    return this.decoderType() === 'ml' ? this.decodedML() : this.decodedSC();
   });
 
   // Extracted info bits after decoding
@@ -225,10 +281,32 @@ export class Polar {
     return this.infoBitIndices().map(i => dec[i]);
   });
 
+  // SC info bits (for comparison)
+  decodedInfoBitsSC = computed(() => {
+    return this.infoBitIndices().map(i => this.decodedSC()[i]);
+  });
+
+  // ML info bits (for comparison)
+  decodedInfoBitsML = computed(() => {
+    return this.infoBitIndices().map(i => this.decodedML()[i]);
+  });
+
   // Decoding success
   decodingSuccess = computed(() => {
     const original = this.infoBits();
     const decoded = this.decodedInfoBits();
+    return original.every((b, i) => b === (decoded[i] ?? 0));
+  });
+
+  decodingSuccessSC = computed(() => {
+    const original = this.infoBits();
+    const decoded = this.decodedInfoBitsSC();
+    return original.every((b, i) => b === (decoded[i] ?? 0));
+  });
+
+  decodingSuccessML = computed(() => {
+    const original = this.infoBits();
+    const decoded = this.decodedInfoBitsML();
     return original.every((b, i) => b === (decoded[i] ?? 0));
   });
 
@@ -277,9 +355,17 @@ export class Polar {
 
   clearErrors() { this.errorPositions.set(new Set()); }
 
-  randomError() {
+  randomError(count: number = 1) {
     const N = this.N();
-    this.errorPositions.set(new Set([Math.floor(Math.random() * N)]));
+    const positions = new Set<number>();
+    while (positions.size < Math.min(count, N)) {
+      positions.add(Math.floor(Math.random() * N));
+    }
+    this.errorPositions.set(positions);
+  }
+
+  setDecoder(type: 'sc' | 'ml') {
+    this.decoderType.set(type);
   }
 
   isError(pos: number): boolean { return this.errorPositions().has(pos); }

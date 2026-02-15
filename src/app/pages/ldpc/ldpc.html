@@ -478,9 +478,9 @@ s3 = H[3] &middot; c = 0 ✓
 
     <div class="result-message" [class.ok]="finalResult().converged" [class.fail]="!finalResult().converged">
       @if (finalResult().converged) {
-        Декодирование успешно за {{ finalResult().iterations }} итераций
+        Декодирование успешно за {{ finalResult().iterations }} {{ finalResult().iterations === 1 ? 'итерацию' : 'итераций' }}
       } @else {
-        Не сошлось за {{ finalResult().iterations }} итераций
+        Не сошлось за {{ finalResult().iterations }} из {{ finalResult().maxIter }} итераций
       }
     </div>
 

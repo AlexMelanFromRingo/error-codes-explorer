@@ -670,6 +670,11 @@ code, pre {
 
 // ── Responsive ──
 @media (max-width: 768px) {
+  .card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
   .bit-cell {
     width: 36px;
     height: 36px;
@@ -680,6 +685,25 @@ code, pre {
     width: 28px;
     height: 28px;
     font-size: 0.75rem;
+  }
+
+  .step-indicator {
+    .step-label {
+      font-size: 0.95rem;
+    }
+  }
+
+  .result-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .toggle-group {
+    .toggle-btn {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+    }
   }
 
   .explainer,
@@ -714,6 +738,32 @@ code, pre {
 }
 
 @media (max-width: 480px) {
+  .card {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .bit-cell {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .section-desc {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+  }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
   .explainer,
   .explainer-why {
     padding: 12px;

@@ -376,12 +376,12 @@ u7: информационный → LLR = −0.8 &lt; 0 → u7 = 1
   <section class="card section">
     <div class="step-indicator">
       <div class="step-num">5</div>
-      <div class="step-label">Канал с ошибками + SC-декодирование</div>
+      <div class="step-label">Канал с ошибками + декодирование</div>
     </div>
 
     <p class="section-desc">
-      Внесите ошибки кликом по битам. Successive Cancellation (SC) декодер обрабатывает биты
-      последовательно от u<sub>0</sub> до u<sub>N-1</sub>, используя информацию от канала и уже декодированных битов.
+      Внесите ошибки кликом по битам. Сравните два декодера: SC (последовательный, быстрый, но слабый на коротких кодах)
+      и ML (перебор всех кодовых слов — оптимальный для N = {{ N() }}).
     </p>
 
     <div class="bits-row">
@@ -397,16 +397,48 @@ u7: информационный → LLR = −0.8 &lt; 0 → u7 = 1
     </div>
 
     <div class="action-row">
-      <button class="btn btn-danger btn-sm" (click)="randomError()">Случайная ошибка</button>
+      <button class="btn btn-danger btn-sm" (click)="randomError(1)">1 ошибка</button>
+      <button class="btn btn-danger btn-sm" (click)="randomError(2)">2 ошибки</button>
+      <button class="btn btn-danger btn-sm" (click)="randomError(3)">3 ошибки</button>
       <button class="btn btn-sm" (click)="clearErrors()">Убрать ошибки</button>
+      <span class="error-count">Ошибок: {{ errorPositions().size }}</span>
     </div>
 
-    <div class="result-message" [class.ok]="decodingSuccess()" [class.fail]="!decodingSuccess()">
-      @if (decodingSuccess()) {
-        SC-декодирование успешно!
-      } @else {
-        Ошибка декодирования — данные повреждены
-      }
+    <!-- Decoder selector -->
+    <div class="decoder-select">
+      <span class="decoder-label">Декодер:</span>
+      <div class="toggle-group">
+        <button class="toggle-btn" [class.active]="decoderType() === 'ml'" (click)="setDecoder('ml')">
+          ML (оптимальный)
+        </button>
+        <button class="toggle-btn" [class.active]="decoderType() === 'sc'" (click)="setDecoder('sc')">
+          SC (последовательный)
+        </button>
+      </div>
+    </div>
+
+    <!-- Both decoder results side by side -->
+    <div class="decoders-comparison">
+      <div class="decoder-result" [class.decoder-active]="decoderType() === 'sc'">
+        <div class="decoder-header">
+          <span class="decoder-name">SC-декодер</span>
+          <span class="decoder-status" [class.ok]="decodingSuccessSC()" [class.fail]="!decodingSuccessSC()">
+            {{ decodingSuccessSC() ? '✓' : '✗' }}
+          </span>
+        </div>
+        <div class="decoder-bits">{{ decodedInfoBitsSC().join('') }}</div>
+        <div class="decoder-note">Быстрый, O(N log N), но ошибки «каскадируют»</div>
+      </div>
+      <div class="decoder-result" [class.decoder-active]="decoderType() === 'ml'">
+        <div class="decoder-header">
+          <span class="decoder-name">ML-декодер</span>
+          <span class="decoder-status" [class.ok]="decodingSuccessML()" [class.fail]="!decodingSuccessML()">
+            {{ decodingSuccessML() ? '✓' : '✗' }}
+          </span>
+        </div>
+        <div class="decoder-bits">{{ decodedInfoBitsML().join('') }}</div>
+        <div class="decoder-note">Оптимальный, O(2<sup>K</sup>), перебор всех слов</div>
+      </div>
     </div>
 
     <div class="result-comparison">
@@ -419,12 +451,12 @@ u7: информационный → LLR = −0.8 &lt; 0 → u7 = 1
         <code class="result-bits" [class.error-text]="errorPositions().size > 0">{{ received().join('') }}</code>
       </div>
       <div class="result-row">
-        <span class="result-label">Декодировано u:</span>
-        <code class="result-bits" [class.ok-text]="decodingSuccess()">{{ decoded().join('') }}</code>
+        <span class="result-label">Оригинал:</span>
+        <code class="result-bits">{{ infoBits().join('') }}</code>
       </div>
       <div class="result-row">
-        <span class="result-label">Инфо. биты:</span>
-        <code class="result-bits">{{ infoBits().join('') }} → {{ decodedInfoBits().join('') }}</code>
+        <span class="result-label">Декодировано:</span>
+        <code class="result-bits" [class.ok-text]="decodingSuccess()" [class.error-text]="!decodingSuccess()">{{ decodedInfoBits().join('') }}</code>
       </div>
     </div>
   </section>

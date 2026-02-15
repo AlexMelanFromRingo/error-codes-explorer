@@ -493,3 +493,21 @@
     color: #fbbf24;
   }
 }
+
+// ── Mobile ──
+@media (max-width: 480px) {
+  .page-title { font-size: 1.5rem; }
+  .page-desc { font-size: 0.85rem; }
+  .pos-cell { min-width: 40px; padding: 6px 4px; font-size: 0.75rem; }
+  .pos-cell.pos-label { min-width: 70px; font-size: 0.7rem; }
+  .step-parity-badge { min-width: 32px; height: 32px; font-size: 0.75rem; }
+  .step-positions { font-size: 0.8rem; }
+  .step-formula { font-size: 0.7rem; padding: 4px 8px; }
+  .pos-tag { min-width: 20px; height: 20px; font-size: 0.65rem; }
+  .comp-label { min-width: 80px; font-size: 0.8rem; }
+  .comp-bits { font-size: 0.9rem; }
+  .syndrome-formula { font-size: 0.75rem; }
+  .matrix-row-label { width: 24px; font-size: 0.65rem; }
+  .matrix-col-label { width: 28px; font-size: 0.55rem; }
+  .matrix-spacer { width: 24px; }
+}

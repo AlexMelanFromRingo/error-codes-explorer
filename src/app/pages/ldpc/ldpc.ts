@@ -59,7 +59,7 @@ export class Ldpc {
   errorPositions = signal<Set<number>>(new Set());
 
   // Max BP iterations
-  maxIterations = signal(10);
+  maxIterations = signal(50);
 
   // Matrix dimensions
   numCheckNodes = computed(() => this.hMatrix().length);
@@ -201,7 +201,7 @@ export class Ldpc {
             sign *= msg >= 0 ? 1 : -1;
             minAbs = Math.min(minAbs, Math.abs(msg));
           }
-          checkToVar[i][j] = sign * minAbs * 0.75; // scaling factor for better convergence
+          checkToVar[i][j] = sign * minAbs * 0.9; // scaling factor for min-sum approximation
         }
       }
 
@@ -258,9 +258,9 @@ export class Ldpc {
   // Final result
   finalResult = computed(() => {
     const iters = this.bpIterations();
-    if (iters.length === 0) return { decoded: this.received(), converged: false, iterations: 0 };
+    if (iters.length === 0) return { decoded: this.received(), converged: false, iterations: 0, maxIter: this.maxIterations() };
     const last = iters[iters.length - 1];
-    return { decoded: last.decoded, converged: last.syndromeOk, iterations: iters.length };
+    return { decoded: last.decoded, converged: last.syndromeOk, iterations: iters.length, maxIter: this.maxIterations() };
   });
 
   // Active iteration for visualization

@@ -128,3 +128,24 @@
 .capability-list { display: flex; flex-direction: column; gap: 6px; }
 .capability { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; }
 .ok-cap { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); color: #34d399; }
+
+// ── Mobile ──
+@media (max-width: 480px) {
+  .page-title { font-size: 1.5rem; }
+  .page-desc { font-size: 0.85rem; }
+  .byte-cell { min-width: 38px; padding: 6px 4px; }
+  .byte-char { font-size: 0.8rem; }
+  .byte-hex { font-size: 0.65rem; }
+  .byte-pos { font-size: 0.5rem; }
+  .pipeline-step { gap: 10px; padding: 12px; }
+  .pipeline-num { min-width: 26px; height: 26px; font-size: 0.75rem; }
+  .pipeline-title { font-size: 0.85rem; }
+  .pipeline-desc { font-size: 0.8rem; }
+  .pipeline-data { font-size: 0.7rem; padding: 4px 8px; }
+  .gf-table td, .gf-table th { padding: 4px 6px; font-size: 0.7rem; }
+  .result-label { min-width: auto; font-size: 0.8rem; }
+  .result-hex { font-size: 0.7rem; }
+  .syndrome-cell { padding: 6px 8px; }
+  .poly-value { font-size: 0.75rem; }
+  .coeff-badge { font-size: 0.65rem; padding: 2px 6px; }
+}

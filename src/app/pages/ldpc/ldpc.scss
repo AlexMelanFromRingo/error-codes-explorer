@@ -114,3 +114,30 @@
 .capability-list { display: flex; flex-direction: column; gap: 6px; }
 .capability { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500; }
 .ok-cap { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15); color: #34d399; }
+
+// ── Mobile ──
+@media (max-width: 480px) {
+  .page-title { font-size: 1.5rem; }
+  .page-desc { font-size: 0.85rem; }
+
+  .matrix-cell-interactive { width: 30px; height: 30px; font-size: 0.75rem; }
+  .matrix-col-hdr { width: 30px; font-size: 0.55rem; }
+  .matrix-row-hdr { width: 30px; font-size: 0.55rem; }
+  .matrix-corner { width: 30px; }
+
+  .tanner-svg { min-width: 360px; }
+
+  .llr-cell { min-width: 42px; padding: 4px 6px; font-size: 0.7rem; }
+  .llr-cell.small { min-width: 36px; padding: 3px 4px; font-size: 0.65rem; }
+
+  .stat { padding: 6px 10px; }
+  .stat-label { font-size: 0.6rem; }
+  .stat-value { font-size: 0.8rem; }
+
+  .iter-selector { gap: 8px; }
+
+  .result-label { min-width: auto; font-size: 0.8rem; }
+  .result-bits { font-size: 0.85rem; letter-spacing: 0.1em; }
+
+  .bit-cell.small { width: 30px; height: 30px; font-size: 0.8rem; }
+}
