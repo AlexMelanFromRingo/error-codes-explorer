@@ -363,6 +363,41 @@ export class Ldpc {
   // Number of data bits
   numDataBits = computed(() => Math.max(0, this.numVarNodes() - this.numCheckNodes()));
 
+  // Explanation helpers for template
+
+  // Describe each codeword bit: which generator rows contributed
+  codewordExplanation = computed(() => {
+    const { G, pivotCols, freeCols } = this.generatorMatrix();
+    const data = this.dataBits();
+    const cw = this.codeword();
+    const n = this.numVarNodes();
+    if (G.length === 0) return [];
+
+    return cw.map((val, j) => {
+      const parts: string[] = [];
+      for (let i = 0; i < Math.min(G.length, data.length); i++) {
+        if (data[i] === 1 && G[i][j] === 1) parts.push(`d${i}`);
+      }
+      if (parts.length === 0) return `v${j} = 0`;
+      return `v${j} = ${parts.join(' ⊕ ')} = ${val}`;
+    });
+  });
+
+  // Check that H * codeword = 0 (for display)
+  syndromeOfCodeword = computed(() => {
+    const h = this.hMatrix();
+    const cw = this.codeword();
+    return h.map(row => {
+      let s = 0;
+      for (let j = 0; j < row.length; j++) {
+        if (row[j] === 1) s ^= cw[j];
+      }
+      return s;
+    });
+  });
+
+  syndromeAllZero = computed(() => this.syndromeOfCodeword().every(s => s === 0));
+
   toggleDataBit(idx: number) {
     const bits = [...this.dataBits()];
     if (idx < bits.length) {

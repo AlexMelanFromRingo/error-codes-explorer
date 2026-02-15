@@ -371,4 +371,34 @@ export class Polar {
   isError(pos: number): boolean { return this.errorPositions().has(pos); }
 
   range(n: number): number[] { return Array.from({ length: n }, (_, i) => i); }
+
+  // Explanation helpers for template
+
+  // For each position in u: describe where the value comes from
+  uExplanation = computed(() => {
+    const frozen = this.frozenBits();
+    const infoIdx = this.infoBitIndices();
+    const u = this.inputVector();
+    return u.map((val, i) => {
+      if (frozen.has(i)) return `u[${i}] = 0 (замороженный)`;
+      const dataIdx = infoIdx.indexOf(i);
+      return `u[${i}] = ${val} (данные d${dataIdx})`;
+    });
+  });
+
+  // For each position in x: describe the XOR formula
+  xExplanation = computed(() => {
+    const u = this.inputVector();
+    const G = this.generatorMatrix();
+    const x = this.encoded();
+    const N = this.N();
+    return x.map((val, j) => {
+      const parts: string[] = [];
+      for (let i = 0; i < N; i++) {
+        if (u[i] === 1 && G[i][j] === 1) parts.push(`u${i}`);
+      }
+      if (parts.length === 0) return `x[${j}] = 0 (нет единичных слагаемых)`;
+      return `x[${j}] = ${parts.join(' ⊕ ')} = ${val}`;
+    });
+  });
 }
