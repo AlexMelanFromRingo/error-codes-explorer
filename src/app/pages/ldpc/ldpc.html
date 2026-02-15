@@ -249,17 +249,56 @@ c3 [  1  0  1  1  1  0  1  0 ]  ← проверка c3: v0 ⊕ v2 ⊕ v3 ⊕ v4
     </div>
   </section>
 
-  <!-- ═══════ STEP 3: Error Injection ═══════ -->
+  <!-- ═══════ STEP 3: Codeword + Error Injection ═══════ -->
   <section class="card section">
     <div class="step-indicator">
       <div class="step-num">3</div>
-      <div class="step-label">Канал с ошибками</div>
+      <div class="step-label">Кодовое слово и канал с ошибками</div>
     </div>
 
     <p class="section-desc">
-      Кликните на бит кодового слова в графе Таннера (или ниже), чтобы внести ошибку.
-      Исходное кодовое слово — все нули. Красные узлы — ошибки.
+      Задайте информационные биты (первые {{ numDataBits() }}) — остальные {{ numCheckNodes() }} вычисляются автоматически
+      как биты чётности. Затем кликните по кодовому слову ниже, чтобы внести ошибки.
     </p>
+
+    <div class="data-input-section">
+      <div class="input-label">Информационные биты ({{ numDataBits() }} шт.):</div>
+      <div class="bits-row">
+        @for (bit of dataBits(); track $index; let i = $index) {
+          <div class="bit-input-group">
+            <span class="bit-pos-label">d{{ i }}</span>
+            <div class="bit-cell"
+                 [class.bit-0]="bit === 0"
+                 [class.bit-1]="bit === 1"
+                 (click)="toggleDataBit(i)">
+              {{ bit }}
+            </div>
+          </div>
+        }
+      </div>
+      <div class="action-row">
+        <button class="btn btn-sm" (click)="randomCodeword()">Случайные данные</button>
+      </div>
+    </div>
+
+    <div class="codeword-display-section">
+      <div class="input-label">Кодовое слово ({{ numVarNodes() }} бит = {{ numDataBits() }} данных + {{ numCheckNodes() }} чётности):</div>
+      <div class="bits-row">
+        @for (bit of codeword(); track $index; let i = $index) {
+          <div class="bit-input-group">
+            <span class="bit-pos-label" [class.label-data]="i < numDataBits()" [class.label-parity]="i >= numDataBits()">
+              {{ i < numDataBits() ? 'd' + i : 'p' + (i - numDataBits()) }}
+            </span>
+            <div class="bit-cell"
+                 [class.bit-0]="bit === 0"
+                 [class.bit-1]="bit === 1"
+                 [class.bit-parity]="i >= numDataBits()">
+              {{ bit }}
+            </div>
+          </div>
+        }
+      </div>
+    </div>
 
     <div class="bits-row">
       @for (bit of received(); track $index; let i = $index) {

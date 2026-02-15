@@ -49,8 +49,84 @@ export class Ldpc {
   // Parity-check matrix
   hMatrix = signal<number[][]>(DEFAULT_H.map(r => [...r]));
 
-  // Original codeword (all-zero is always a valid codeword for linear codes)
-  codeword = signal<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
+  // Data bits (user-editable)
+  dataBits = signal<number[]>([0, 0, 0, 0]);
+
+  // Compute generator matrix from H using GF(2) Gaussian elimination
+  // G is k×n such that H*G^T = 0 and codeword = data * G
+  generatorMatrix = computed(() => {
+    const h = this.hMatrix();
+    const m = h.length;
+    const n = h[0]?.length || 0;
+    const k = n - m;
+    if (k <= 0 || n === 0) return { G: [] as number[][], pivotCols: [] as number[], freeCols: [] as number[] };
+
+    // Augmented matrix for row reduction (copy)
+    const aug = h.map(r => [...r]);
+    const pivotCols: number[] = [];
+
+    // Forward elimination with partial pivoting
+    let pivotRow = 0;
+    for (let col = 0; col < n && pivotRow < m; col++) {
+      // Find pivot in this column
+      let found = -1;
+      for (let row = pivotRow; row < m; row++) {
+        if (aug[row][col] === 1) { found = row; break; }
+      }
+      if (found === -1) continue;
+
+      // Swap rows
+      [aug[pivotRow], aug[found]] = [aug[found], aug[pivotRow]];
+      pivotCols.push(col);
+
+      // Eliminate below and above
+      for (let row = 0; row < m; row++) {
+        if (row !== pivotRow && aug[row][col] === 1) {
+          for (let j = 0; j < n; j++) aug[row][j] ^= aug[pivotRow][j];
+        }
+      }
+      pivotRow++;
+    }
+
+    // Free columns = columns not in pivotCols
+    const pivotSet = new Set(pivotCols);
+    const freeCols = [];
+    for (let j = 0; j < n; j++) {
+      if (!pivotSet.has(j)) freeCols.push(j);
+    }
+
+    // Build generator matrix: each row corresponds to one free variable
+    // For free column f, set c[f]=1, all other free cols=0, solve for pivot cols
+    const G: number[][] = [];
+    for (const f of freeCols) {
+      const row = new Array(n).fill(0);
+      row[f] = 1;
+      // For each pivot, solve: aug[i][pivotCols[i]] * c[pivotCols[i]] + ... = 0
+      for (let i = 0; i < pivotCols.length; i++) {
+        row[pivotCols[i]] = aug[i][f]; // coefficient of free variable f in equation i
+      }
+      G.push(row);
+    }
+
+    return { G, pivotCols, freeCols };
+  });
+
+  // Encode data bits into a valid codeword
+  codeword = computed(() => {
+    const { G } = this.generatorMatrix();
+    const n = this.numVarNodes();
+    const data = this.dataBits();
+
+    if (G.length === 0) return new Array(n).fill(0);
+
+    const c = new Array(n).fill(0);
+    for (let i = 0; i < Math.min(G.length, data.length); i++) {
+      if (data[i] === 1) {
+        for (let j = 0; j < n; j++) c[j] ^= G[i][j];
+      }
+    }
+    return c;
+  });
 
   // Channel noise: flip probability
   flipProb = signal(0.15);
@@ -266,6 +342,26 @@ export class Ldpc {
   // Active iteration for visualization
   activeIteration = signal(0);
 
+  // Number of data bits
+  numDataBits = computed(() => Math.max(0, this.numVarNodes() - this.numCheckNodes()));
+
+  toggleDataBit(idx: number) {
+    const bits = [...this.dataBits()];
+    if (idx < bits.length) {
+      bits[idx] = 1 - bits[idx];
+      this.dataBits.set(bits);
+      this.errorPositions.set(new Set());
+      this.activeIteration.set(0);
+    }
+  }
+
+  randomCodeword() {
+    const k = this.numDataBits();
+    this.dataBits.set(Array.from({ length: k }, () => Math.round(Math.random())));
+    this.errorPositions.set(new Set());
+    this.activeIteration.set(0);
+  }
+
   toggleError(pos: number) {
     const errors = new Set(this.errorPositions());
     if (errors.has(pos)) errors.delete(pos);
@@ -299,6 +395,8 @@ export class Ldpc {
     const h = this.hMatrix().map(r => [...r]);
     h[i][j] = 1 - h[i][j];
     this.hMatrix.set(h);
+    const k = (h[0]?.length || 0) - h.length;
+    this.dataBits.set(new Array(Math.max(0, k)).fill(0));
     this.errorPositions.set(new Set());
   }
 

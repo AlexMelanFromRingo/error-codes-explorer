@@ -408,11 +408,11 @@ u7: информационный → LLR = −0.8 &lt; 0 → u7 = 1
     <div class="decoder-select">
       <span class="decoder-label">Декодер:</span>
       <div class="toggle-group">
-        <button class="toggle-btn" [class.active]="decoderType() === 'ml'" (click)="setDecoder('ml')">
-          ML (оптимальный)
-        </button>
         <button class="toggle-btn" [class.active]="decoderType() === 'sc'" (click)="setDecoder('sc')">
           SC (последовательный)
+        </button>
+        <button class="toggle-btn" [class.active]="decoderType() === 'ml'" (click)="setDecoder('ml')">
+          ML (оптимальный)
         </button>
       </div>
     </div>
@@ -437,7 +437,7 @@ u7: информационный → LLR = −0.8 &lt; 0 → u7 = 1
           </span>
         </div>
         <div class="decoder-bits">{{ decodedInfoBitsML().join('') }}</div>
-        <div class="decoder-note">Оптимальный, O(2<sup>K</sup>), перебор всех слов</div>
+        <div class="decoder-note">Оптимальный, O(2<sup>K</sup>), перебор всех кодовых слов</div>
       </div>
     </div>
 

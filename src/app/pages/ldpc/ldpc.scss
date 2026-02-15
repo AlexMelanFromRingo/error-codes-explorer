@@ -90,6 +90,19 @@
 .tanner-label { text-anchor: middle; dominant-baseline: central; font-family: var(--font-mono); font-size: 12px; font-weight: 600; fill: white; }
 .tanner-name { text-anchor: middle; font-family: var(--font-mono); font-size: 10px; fill: var(--color-text-muted); }
 
+// ── Data Input ──
+.data-input-section, .codeword-display-section { margin-bottom: 20px; }
+.input-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 8px; }
+
+.bit-input-group {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.bit-pos-label {
+  font-size: 0.65rem; font-family: var(--font-mono); font-weight: 600; color: var(--color-text-muted);
+  &.label-data { color: #22d3ee; }
+  &.label-parity { color: #fbbf24; }
+}
+
 // ── Bits Row ──
 .bits-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; &.compact { gap: 4px; } }
 .action-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
