@@ -257,8 +257,10 @@ c3 [  1  0  1  1  1  0  1  0 ]  ← проверка c3: v0 ⊕ v2 ⊕ v3 ⊕ v4
     </div>
 
     <p class="section-desc">
-      Задайте информационные биты (первые {{ numDataBits() }}) — остальные {{ numCheckNodes() }} вычисляются автоматически
-      как биты чётности. Затем кликните по кодовому слову ниже, чтобы внести ошибки.
+      Задайте {{ numDataBits() }} информационных бит — система закодирует их в {{ numVarNodes() }}-битное кодовое слово
+      с помощью порождающей матрицы G (H&times;G<sup>T</sup> = 0). Этот код [{{ numVarNodes() }},{{ numDataBits() }}]
+      имеет минимальное расстояние d&nbsp;=&nbsp;3 и гарантированно исправляет <strong>1&nbsp;ошибку</strong>.
+      При 2+ ошибках декодер может найти <em>другое</em> допустимое кодовое слово.
     </p>
 
     <div class="data-input-section">
@@ -282,17 +284,14 @@ c3 [  1  0  1  1  1  0  1  0 ]  ← проверка c3: v0 ⊕ v2 ⊕ v3 ⊕ v4
     </div>
 
     <div class="codeword-display-section">
-      <div class="input-label">Кодовое слово ({{ numVarNodes() }} бит = {{ numDataBits() }} данных + {{ numCheckNodes() }} чётности):</div>
+      <div class="input-label">Кодовое слово ({{ numVarNodes() }} бит):</div>
       <div class="bits-row">
         @for (bit of codeword(); track $index; let i = $index) {
           <div class="bit-input-group">
-            <span class="bit-pos-label" [class.label-data]="i < numDataBits()" [class.label-parity]="i >= numDataBits()">
-              {{ i < numDataBits() ? 'd' + i : 'p' + (i - numDataBits()) }}
-            </span>
+            <span class="bit-pos-label">v{{ i }}</span>
             <div class="bit-cell"
                  [class.bit-0]="bit === 0"
-                 [class.bit-1]="bit === 1"
-                 [class.bit-parity]="i >= numDataBits()">
+                 [class.bit-1]="bit === 1">
               {{ bit }}
             </div>
           </div>
@@ -300,16 +299,23 @@ c3 [  1  0  1  1  1  0  1  0 ]  ← проверка c3: v0 ⊕ v2 ⊕ v3 ⊕ v4
       </div>
     </div>
 
-    <div class="bits-row">
-      @for (bit of received(); track $index; let i = $index) {
-        <div class="bit-cell"
-             [class.bit-error]="isError(i)"
-             [class.bit-0]="!isError(i) && bit === 0"
-             [class.bit-1]="!isError(i) && bit === 1"
-             (click)="toggleError(i)">
-          {{ bit }}
-        </div>
-      }
+    <div class="codeword-display-section">
+      <div class="input-label">Принятое слово (кликните, чтобы внести ошибку):</div>
+      <div class="bits-row">
+        @for (bit of received(); track $index; let i = $index) {
+          <div class="bit-input-group">
+            <span class="bit-pos-label">v{{ i }}</span>
+            <div class="bit-cell"
+                 [class.bit-error]="isError(i)"
+                 [class.bit-0]="!isError(i) && bit === 0"
+                 [class.bit-1]="!isError(i) && bit === 1"
+                 (click)="toggleError(i)">
+              {{ bit }}
+            </div>
+            <span class="bit-pos-label" style="font-size:0.55rem">{{ codeword()[i] === bit ? '' : '⚡' }}</span>
+          </div>
+        }
+      </div>
     </div>
 
     <div class="action-row">
@@ -530,9 +536,14 @@ s3 = H[3] &middot; c = 0 ✓
       <div class="step-label">Результат</div>
     </div>
 
-    <div class="result-message" [class.ok]="finalResult().converged" [class.fail]="!finalResult().converged">
-      @if (finalResult().converged) {
-        Декодирование успешно за {{ finalResult().iterations }} {{ finalResult().iterations === 1 ? 'итерацию' : 'итераций' }}
+    <div class="result-message"
+         [class.ok]="finalResult().converged && decodingCorrect()"
+         [class.fail]="!finalResult().converged"
+         [class.warn]="finalResult().converged && !decodingCorrect()">
+      @if (finalResult().converged && decodingCorrect()) {
+        Декодирование успешно за {{ finalResult().iterations }} {{ finalResult().iterations === 1 ? 'итерацию' : 'итераций' }} — все ошибки исправлены!
+      } @else if (finalResult().converged && !decodingCorrect()) {
+        Синдром = 0 за {{ finalResult().iterations }} {{ finalResult().iterations === 1 ? 'итерацию' : 'итераций' }}, но декодировано в <strong>другое</strong> кодовое слово ({{ residualErrors() }} ошибок). Слишком много ошибок для этого кода (d=3, исправляет только 1).
       } @else {
         Не сошлось за {{ finalResult().iterations }} из {{ finalResult().maxIter }} итераций
       }
@@ -546,10 +557,18 @@ s3 = H[3] &middot; c = 0 ✓
       <div class="result-row">
         <span class="result-label">Получено:</span>
         <code class="result-bits" [class.error-text]="errorPositions().size > 0">{{ received().join('') }}</code>
+        @if (errorPositions().size > 0) {
+          <span class="error-count">({{ errorPositions().size }} {{ errorPositions().size === 1 ? 'ошибка' : 'ошибок' }})</span>
+        }
       </div>
       <div class="result-row">
         <span class="result-label">Декодировано:</span>
-        <code class="result-bits" [class.ok-text]="finalResult().converged">{{ finalResult().decoded.join('') }}</code>
+        <code class="result-bits"
+              [class.ok-text]="decodingCorrect()"
+              [class.error-text]="!decodingCorrect()">{{ finalResult().decoded.join('') }}</code>
+        @if (!decodingCorrect() && finalResult().converged) {
+          <span class="error-count warn-text">(не совпадает с отправленным!)</span>
+        }
       </div>
     </div>
   </section>

@@ -339,6 +339,24 @@ export class Ldpc {
     return { decoded: last.decoded, converged: last.syndromeOk, iterations: iters.length, maxIter: this.maxIterations() };
   });
 
+  // Check if decoding actually recovered the correct codeword
+  decodingCorrect = computed(() => {
+    const d = this.finalResult().decoded;
+    const c = this.codeword();
+    return d.length === c.length && d.every((v, i) => v === c[i]);
+  });
+
+  // Number of remaining bit errors after decoding
+  residualErrors = computed(() => {
+    const d = this.finalResult().decoded;
+    const c = this.codeword();
+    let count = 0;
+    for (let i = 0; i < Math.min(d.length, c.length); i++) {
+      if (d[i] !== c[i]) count++;
+    }
+    return count;
+  });
+
   // Active iteration for visualization
   activeIteration = signal(0);
 

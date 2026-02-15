@@ -146,13 +146,15 @@
   padding: 12px 16px; border-radius: var(--radius-md); font-weight: 600; margin-bottom: 16px;
   &.ok { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
   &.fail { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
+  &.warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #fbbf24; }
 }
 .result-comparison { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
-.result-row { display: flex; align-items: center; gap: 12px; }
+.result-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .result-label { font-size: 0.85rem; color: var(--color-text-secondary); min-width: 110px; }
 .result-bits { font-family: var(--font-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.15em; }
 .error-text { color: #f87171; }
 .ok-text { color: #34d399; }
+.warn-text { color: #fbbf24; }
 
 // ── Theory ──
 .theory-grid { display: grid; gap: 16px; @media (min-width: 768px) { grid-template-columns: repeat(2, 1fr); } }
