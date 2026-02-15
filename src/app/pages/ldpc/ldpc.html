@@ -199,8 +199,23 @@ c3 [  1  0  1  1  1  0  1  0 ]  ← проверка c3: v0 ⊕ v2 ⊕ v3 ⊕ v4
       </p>
     </div>
 
-    <div class="tanner-container">
-      <svg viewBox="0 0 600 210" class="tanner-svg">
+    <div class="tanner-toolbar">
+      <button class="btn btn-sm" (click)="tannerZoomIn()">+</button>
+      <button class="btn btn-sm" (click)="tannerZoomOut()">−</button>
+      <button class="btn btn-sm" (click)="tannerReset()">Сброс</button>
+      <span class="tanner-zoom-label">{{ (tannerZoom() * 100).toFixed(0) }}%</span>
+      <span class="tanner-hint">Перетаскивайте и масштабируйте</span>
+    </div>
+
+    <div class="tanner-container tanner-pannable"
+         (wheel)="onTannerWheel($event)"
+         (touchstart)="onTannerTouchStart($event)"
+         (touchmove)="onTannerTouchMove($event)">
+      <svg [attr.viewBox]="tannerViewBox()" class="tanner-svg"
+           (pointerdown)="onTannerPointerDown($event)"
+           (pointermove)="onTannerPointerMove($event)"
+           (pointerup)="onTannerPointerUp($event)"
+           (pointerleave)="onTannerPointerUp($event)">
         <!-- Edges -->
         @for (edge of tannerEdges(); track edge.from + edge.to) {
           <line [attr.x1]="edge.x1" [attr.y1]="edge.y1"

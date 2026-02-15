@@ -37,11 +37,48 @@
 .stat-value { font-size: 0.9rem; font-weight: 600; &.mono { font-family: var(--font-mono); font-size: 0.8rem; } }
 
 // ── Tanner Graph ──
-.tanner-container {
-  background: rgba(0,0,0,0.3); border: 1px solid var(--color-border); border-radius: var(--radius-md);
-  padding: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+.tanner-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
-.tanner-svg { width: 100%; min-width: 500px; max-width: 700px; display: block; margin: 0 auto; }
+
+.tanner-zoom-label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  min-width: 40px;
+}
+
+.tanner-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.tanner-container {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  overflow: hidden;
+}
+
+.tanner-pannable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+
+  &:active { cursor: grabbing; }
+}
+
+.tanner-svg {
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
 .tanner-edge { stroke: rgba(255,255,255,0.15); stroke-width: 1.5; }
 .tanner-var-node {
   fill: rgba(6,182,212,0.15); stroke: #22d3ee; stroke-width: 2; cursor: pointer;

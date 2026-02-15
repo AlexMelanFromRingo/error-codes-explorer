@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, ElementRef, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 // Small LDPC parity-check matrix H for demonstration
@@ -316,5 +316,97 @@ export class Ldpc {
 
   abs(n: number): number {
     return Math.abs(n);
+  }
+
+  // ── Pan & Zoom for Tanner graph ──
+  tannerPanX = signal(0);
+  tannerPanY = signal(0);
+  tannerZoom = signal(1);
+
+  // Computed viewBox based on pan/zoom
+  tannerViewBox = computed(() => {
+    const baseW = 600;
+    const baseH = 210;
+    const zoom = this.tannerZoom();
+    const w = baseW / zoom;
+    const h = baseH / zoom;
+    const cx = baseW / 2 + this.tannerPanX();
+    const cy = baseH / 2 + this.tannerPanY();
+    return `${cx - w / 2} ${cy - h / 2} ${w} ${h}`;
+  });
+
+  private _dragging = false;
+  private _lastX = 0;
+  private _lastY = 0;
+  private _pinchDist = 0;
+
+  onTannerPointerDown(e: PointerEvent) {
+    // Don't intercept clicks on nodes (circles/rects)
+    const tag = (e.target as Element).tagName?.toLowerCase();
+    if (tag === 'circle' || tag === 'rect') return;
+
+    this._dragging = true;
+    this._lastX = e.clientX;
+    this._lastY = e.clientY;
+    (e.target as Element).closest?.('svg')?.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  }
+
+  onTannerPointerMove(e: PointerEvent) {
+    if (!this._dragging) return;
+    const zoom = this.tannerZoom();
+    const dx = (e.clientX - this._lastX) / zoom;
+    const dy = (e.clientY - this._lastY) / zoom;
+    this.tannerPanX.update(v => v - dx);
+    this.tannerPanY.update(v => v - dy);
+    this._lastX = e.clientX;
+    this._lastY = e.clientY;
+    e.preventDefault();
+  }
+
+  onTannerPointerUp(e: PointerEvent) {
+    this._dragging = false;
+  }
+
+  onTannerWheel(e: WheelEvent) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    this.tannerZoom.update(z => Math.max(0.3, Math.min(5, z * delta)));
+  }
+
+  onTannerTouchStart(e: TouchEvent) {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      this._pinchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }
+
+  onTannerTouchMove(e: TouchEvent) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (this._pinchDist > 0) {
+        const scale = dist / this._pinchDist;
+        this.tannerZoom.update(z => Math.max(0.3, Math.min(5, z * scale)));
+      }
+      this._pinchDist = dist;
+    }
+  }
+
+  tannerZoomIn() {
+    this.tannerZoom.update(z => Math.min(5, z * 1.3));
+  }
+
+  tannerZoomOut() {
+    this.tannerZoom.update(z => Math.max(0.3, z / 1.3));
+  }
+
+  tannerReset() {
+    this.tannerPanX.set(0);
+    this.tannerPanY.set(0);
+    this.tannerZoom.set(1);
   }
 }
