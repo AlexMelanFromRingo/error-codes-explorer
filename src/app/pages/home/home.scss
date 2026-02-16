@@ -186,9 +186,14 @@
     height: 18px;
     transition: transform 0.3s;
   }
+}
 
-  @media (max-width: 768px) {
-    position: static;
+// Mobile: move arrow to bottom
+@media (max-width: 768px) {
+  .card-arrow {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
     margin-top: 16px;
     display: flex;
     justify-content: flex-end;
