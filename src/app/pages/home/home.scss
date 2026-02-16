@@ -83,10 +83,6 @@
     box-shadow: var(--shadow-glow);
 
     &::before { opacity: 1; }
-
-    .card-arrow svg {
-      transform: translateX(4px);
-    }
   }
 
   &[data-color="indigo"] {
@@ -176,9 +172,10 @@
 }
 
 .card-arrow {
-  position: absolute;
-  top: 28px;
-  right: 28px;
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  justify-content: flex-end;
   color: var(--color-text-muted);
 
   svg {
@@ -186,17 +183,9 @@
     height: 18px;
     transition: transform 0.3s;
   }
-}
 
-// Mobile: move arrow to bottom
-@media (max-width: 768px) {
-  .card-arrow {
-    position: static !important;
-    top: auto !important;
-    right: auto !important;
-    margin-top: 16px;
-    display: flex;
-    justify-content: flex-end;
+  &:hover svg {
+    transform: translateX(4px);
   }
 }
 
@@ -267,7 +256,6 @@
 
   .card-title {
     font-size: 1.1rem;
-    padding-right: 0; // Remove padding since arrow moves to bottom
   }
 
   .card-desc {
@@ -276,20 +264,5 @@
 
   .card-header {
     margin-bottom: 8px;
-  }
-
-  .card-features {
-    margin-bottom: 0; // Ensure space for arrow
-  }
-}
-
-// Additional padding for larger phones/tablets
-@media (max-width: 1024px) and (min-width: 769px) {
-  .code-card {
-    .card-title,
-    .card-desc,
-    .card-features {
-      padding-right: 40px; // Space for absolute arrow
-    }
   }
 }
