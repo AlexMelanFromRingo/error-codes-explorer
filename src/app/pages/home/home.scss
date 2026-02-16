@@ -187,11 +187,9 @@
     transition: transform 0.3s;
   }
 
-  @media (max-width: 640px) {
-    position: relative;
-    top: auto;
-    right: auto;
-    margin-top: 12px;
+  @media (max-width: 768px) {
+    position: static;
+    margin-top: 16px;
     display: flex;
     justify-content: flex-end;
   }
@@ -245,7 +243,7 @@
 }
 
 // ── Mobile Optimizations ──
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .home {
     padding: 0 16px;
   }
@@ -273,5 +271,20 @@
 
   .card-header {
     margin-bottom: 8px;
+  }
+
+  .card-features {
+    margin-bottom: 0; // Ensure space for arrow
+  }
+}
+
+// Additional padding for larger phones/tablets
+@media (max-width: 1024px) and (min-width: 769px) {
+  .code-card {
+    .card-title,
+    .card-desc,
+    .card-features {
+      padding-right: 40px; // Space for absolute arrow
+    }
   }
 }
