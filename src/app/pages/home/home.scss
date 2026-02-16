@@ -186,6 +186,15 @@
     height: 18px;
     transition: transform 0.3s;
   }
+
+  @media (max-width: 640px) {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 
 // ── Concepts ──
@@ -233,4 +242,36 @@
   font-size: 0.8rem;
   color: var(--color-text-secondary);
   line-height: 1.5;
+}
+
+// ── Mobile Optimizations ──
+@media (max-width: 640px) {
+  .home {
+    padding: 0 16px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-desc {
+    font-size: 0.95rem;
+  }
+
+  .code-card {
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    padding-right: 0; // Remove padding since arrow moves to bottom
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+  }
+
+  .card-header {
+    margin-bottom: 8px;
+  }
 }
